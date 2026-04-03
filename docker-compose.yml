@@ -4,6 +4,7 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile
     container_name: streaming
+    user: "1000:1000"
     volumes:
       - ./backend:/var/www
     working_dir: /var/www
