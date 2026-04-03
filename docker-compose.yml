@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
-    container_name: laravel_app
+    container_name: streaming
     volumes:
       - ./backend:/var/www
     working_dir: /var/www
@@ -12,7 +12,7 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: laravel_nginx
+    container_name: streaming_nginx
     ports:
       - "8000:80"
     volumes:
@@ -33,11 +33,11 @@ services:
 
   db:
     image: postgres:16-alpine
-    container_name: laravel_db
+    container_name: stream
     environment:
-      POSTGRES_DB: laravel_db
-      POSTGRES_USER: laravel
-      POSTGRES_PASSWORD: laravel
+      POSTGRES_DB: stream
+      POSTGRES_USER: stream
+      POSTGRES_PASSWORD: stream
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
