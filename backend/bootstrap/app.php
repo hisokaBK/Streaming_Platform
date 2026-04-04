@@ -21,5 +21,5 @@ return Application::configure(basePath: dirname(__DIR__))
                 return true;
             }
             return $request->expectsJson();
-        });
-    })->create();
+    });
+})->create();
