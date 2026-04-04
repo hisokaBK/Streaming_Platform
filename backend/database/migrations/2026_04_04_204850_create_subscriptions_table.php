@@ -11,7 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-       
+        Schema::create('subscriptions', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('subscriber_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('streamer_id')->constrained('users')->cascadeOnDelete();
+            $table->timestamps();
+
+            $table->unique(['subscriber_id', 'streamer_id']);
+        });
     }
 
     /**
