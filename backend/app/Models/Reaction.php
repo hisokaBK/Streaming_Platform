@@ -2,11 +2,26 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Reaction extends Model
 {
-    /** @use HasFactory<\Database\Factories\ReactionFactory> */
     use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'stream_id',
+        'type',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function stream()
+    {
+        return $this->belongsTo(Stream::class);
+    }
 }
