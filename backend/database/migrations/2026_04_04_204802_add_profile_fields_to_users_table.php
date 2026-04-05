@@ -14,11 +14,6 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->string('role')->default('user')->after('password');
 
-            $table->string('avatar')->nullable()->after('role');
-            $table->string('background_image')->nullable()->after('avatar');
-
-            $table->text('bio')->nullable()->after('background_image');
-
             $table->boolean('is_banned')->default(false)->after('bio');
             $table->timestamp('banned_at')->nullable()->after('is_banned');
         });
