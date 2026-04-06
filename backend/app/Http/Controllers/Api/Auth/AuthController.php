@@ -42,7 +42,38 @@ class AuthController extends Controller
         ], 201);
     }
 
+    public function login(LoginRequest $request): JsonResponse
+    {
+        $credentials = $request->validated();
 
+        if (! Auth::attempt($credentials)) {
+            return response()->json([
+                'message' => 'Invalid credentials',
+            ], 401);
+        }
+
+        $user = User::with('profile')->where('email', $credentials['email'])->first();
+
+        if ($user->is_banned) {
+            return response()->json([
+                'message' => 'Your account is banned',
+            ], 403);
+        }
+
+        $user->tokens()->delete();
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Login successful',
+            'data' => [
+                'user' => new UserResource($user),
+                'token' => $token,
+            ],
+        ]);
+    }
+
+    
 
 
 }
