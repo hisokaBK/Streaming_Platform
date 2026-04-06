@@ -62,10 +62,16 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        Subscription::factory(15)->make()->each(function ($sub) use ($users) {
-            $sub->subscriber_id = $users->random()->id;
-            $sub->streamer_id = $users->random()->id;
-            $sub->save();
-        });
+        foreach (range(1, 20) as $i) {
+            $subscriber = $users->random()->id;
+            $streamer = $users->random()->id;
+
+            if ($subscriber === $streamer) continue;
+
+            Subscription::firstOrCreate([
+                'subscriber_id' => $subscriber,
+                'streamer_id' => $streamer,
+            ]);
+        }
     }
 }
