@@ -40,9 +40,9 @@ class Stream extends Model
         return $this->belongsTo(Category::class);
     }
 
-    public function videos()
+    public function video()
     {
-        return $this->hasMany(Video::class);
+        return $this->hasOne(Video::class);
     }
 
     public function reactions()
