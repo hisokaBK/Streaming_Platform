@@ -24,7 +24,31 @@ class CategoryController extends Controller
         ]);
     }
 
- 
+    public function store(StoreCategoryRequest $request): JsonResponse
+    {
+
+        $category = Category::create($request->validated());
+
+        return response()->json([
+            'message' => 'Category created successfully',
+            'data' => [
+                'category' => new CategoryResource($category),
+            ],
+        ]);
+    }
+
+    public function update(UpdateCategoryRequest $request, Category $category): JsonResponse
+    {
+
+        $category->update($request->validated());
+
+        return response()->json([
+            'message' => 'Category updated successfully',
+            'data' => [
+                'category' => new CategoryResource($category),
+            ],
+        ]);
+    }
 
 
 
