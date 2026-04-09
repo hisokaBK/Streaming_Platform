@@ -11,7 +11,6 @@ class Stream extends Model
 
     protected $fillable = [
         'user_id',
-        'category_id',
         'title',
         'slug',
         'description',
@@ -35,14 +34,14 @@ class Stream extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function category()
+    public function categories()
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsToMany(Category::class);
     }
 
-    public function video()
+    public function comments()
     {
-        return $this->hasOne(Video::class);
+        return $this->hasMany(Comment::class);
     }
 
     public function reactions()

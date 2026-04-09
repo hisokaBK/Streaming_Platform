@@ -12,6 +12,7 @@ class Comment extends Model
     protected $fillable = [
         'user_id',
         'video_id',
+        'stream_id',
         'content',
     ];
 
@@ -23,5 +24,10 @@ class Comment extends Model
     public function video()
     {
         return $this->belongsTo(Video::class);
+    }
+
+    public function stream()
+    {
+        return $this->belongsTo(Stream::class);
     }
 }

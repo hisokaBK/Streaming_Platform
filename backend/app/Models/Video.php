@@ -11,8 +11,6 @@ class Video extends Model
 
     protected $fillable = [
         'user_id',
-        'stream_id',
-        'category_id',
         'title',
         'slug',
         'description',
@@ -32,14 +30,9 @@ class Video extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function stream()
+    public function categories()
     {
-        return $this->belongsTo(Stream::class);
-    }
-
-    public function category()
-    {
-        return $this->belongsTo(Category::class);
+        return $this->belongsToMany(Category::class);
     }
 
     public function comments()

@@ -17,11 +17,11 @@ class Category extends Model
 
     public function streams()
     {
-        return $this->hasMany(Stream::class);
+        return $this->belongsToMany(Stream::class);
     }
 
     public function videos()
     {
-        return $this->hasMany(Video::class);
+        return $this->belongsToMany(Video::class);
     }
 }

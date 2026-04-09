@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\Api\Auth;
 
 use App\Models\User;
 use App\Models\Profile;
@@ -29,15 +29,12 @@ class AuthController extends Controller
             'bio' => null,
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-
         $user->load('profile');
 
         return response()->json([
             'message' => 'Register successful',
             'data' => [
                 'user' => new UserResource($user),
-                'token' => $token,
             ],
         ], 201);
     }

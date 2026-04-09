@@ -27,6 +27,7 @@ class User extends Authenticatable
 
     protected $casts = [
         'banned_at' => 'datetime',
+        'is_banned' => 'boolean',
         'password' => 'hashed',
     ];
 
@@ -53,6 +54,11 @@ class User extends Authenticatable
     public function reactions()
     {
         return $this->hasMany(Reaction::class);
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
     }
 
     public function sentMessages()
