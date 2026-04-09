@@ -11,22 +11,17 @@ use Illuminate\Support\Str;
  */
 class StreamFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
             'title' => fake()->sentence(),
-            'slug' => Str::slug(fake()->unique()->sentence()),
             'description' => fake()->paragraph(),
-            'thumbnail' => null,
-            'status' => 'ended',
-            'visibility' => 'public',
-            'stream_key' => Str::random(20),
-            'scheduled_at' => now(),
+
+            'status' => 'live',
+            'stream_key' => Str::random(32),
+
+            'started_at' => now(),
+            'ended_at' => null,
         ];
     }
 }
