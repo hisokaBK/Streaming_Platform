@@ -21,7 +21,6 @@ return new class extends Migration
             $table->string('status')->default('live');
             $table->string('stream_key')->unique();
 
-            $table->timestamp('scheduled_at')->nullable();
             $table->timestamp('started_at')->nullable();
             $table->timestamp('ended_at')->nullable();
 
