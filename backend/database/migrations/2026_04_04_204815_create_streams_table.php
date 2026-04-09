@@ -6,23 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('streams', function (Blueprint $table) {
+        Schema::create('streams', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
+
+            $table->foreignId('user_id')
+                ->constrained()
+                ->cascadeOnDelete();
 
             $table->string('title');
-            $table->string('slug')->unique();
             $table->text('description')->nullable();
-            $table->string('thumbnail')->nullable();
 
-            $table->string('status')->default('draft');
-            $table->string('visibility')->default('public');
+            $table->string('status')->default('live');
             $table->string('stream_key')->unique();
 
             $table->timestamp('scheduled_at')->nullable();
@@ -33,9 +29,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('streams');
