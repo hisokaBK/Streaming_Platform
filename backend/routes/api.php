@@ -20,6 +20,7 @@ Route::prefix('auth')->group(function () {
 });
 
 
+
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/profile', [ProfileController::class, 'show']);
