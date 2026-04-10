@@ -62,6 +62,46 @@ class StreamController extends Controller
         ]);
     }
 
+    public function update(UpdateStreamRequest $request, Stream $stream): JsonResponse
+    {
+        if ($stream->status === 'ended') {
+            return response()->json([
+                'message' => 'Ended stream cannot be updated.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($request, $stream) {
+            $newStatus = $request->status ?? $stream->status;
+
+            $data = [
+                'title' => $request->has('title') ? $request->title : $stream->title,
+                'description' => $request->has('description') ? $request->description : $stream->description,
+                'status' => $newStatus,
+            ];
+
+            if ($stream->status !== 'live' && $newStatus === 'live') {
+                $data['started_at'] = now();
+            }
+
+            if ($newStatus === 'ended' && is_null($stream->ended_at)) {
+                $data['ended_at'] = now();
+            }
+
+            $stream->update($data);
+
+            if ($request->has('category_ids')) {
+                $stream->categories()->sync($request->category_ids ?? []);
+            }
+        });
+
+        $stream->load(['user', 'categories'])
+            ->loadCount(['comments', 'reactions']);
+
+        return response()->json([
+            'message' => 'Stream updated successfully.',
+            'data' => new StreamResource($stream),
+        ]);
+    }
 
 
 }
