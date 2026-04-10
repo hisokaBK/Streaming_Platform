@@ -17,6 +17,7 @@ class StreamResource extends JsonResource
             'stream_key' => $this->stream_key,
             'started_at' => $this->started_at,
             'ended_at' => $this->ended_at,
+            'current_viewers' => $this->current_viewers,
 
             'user' => [
                 'id' => $this->user?->id,

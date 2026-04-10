@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('streams', function (Blueprint $table): void {
+        Schema::create('streams', function (Blueprint $table) {
             $table->id();
 
             $table->foreignId('user_id')
@@ -18,11 +18,12 @@ return new class extends Migration
             $table->string('title');
             $table->text('description')->nullable();
 
-            $table->string('status')->default('live');
+            $table->enum('status', ['live', 'ended'])->default('live');
             $table->string('stream_key')->unique();
-
             $table->timestamp('started_at')->nullable();
             $table->timestamp('ended_at')->nullable();
+
+            $table->unsignedInteger('current_viewers')->default(0);
 
             $table->timestamps();
         });

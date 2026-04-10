@@ -4,9 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Stream extends Model
 {
@@ -20,6 +17,7 @@ class Stream extends Model
         'stream_key',
         'started_at',
         'ended_at',
+        'current_viewers',
     ];
 
     protected $casts = [
