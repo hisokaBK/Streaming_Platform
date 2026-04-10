@@ -11,18 +11,11 @@ class Video extends Model
 
     protected $fillable = [
         'user_id',
+        'stream_id',
         'title',
-        'slug',
         'description',
-        'thumbnail',
-        'video_url',
+        'url',
         'duration',
-        'visibility',
-        'published_at',
-    ];
-
-    protected $casts = [
-        'published_at' => 'datetime',
     ];
 
     public function user()
@@ -30,13 +23,13 @@ class Video extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function categories()
+    public function stream()
     {
-        return $this->belongsToMany(Category::class,'video_category');
+        return $this->belongsTo(Stream::class);
     }
 
-    public function comments()
+    public function categories()
     {
-        return $this->hasMany(Comment::class);
+        return $this->belongsToMany(Category::class, 'video_category');
     }
 }

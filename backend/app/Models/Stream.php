@@ -44,4 +44,9 @@ class Stream extends Model
     {
         return $this->belongsToMany(Category::class, 'stream_category');
     }
+
+    public function video()
+    {
+        return $this->hasOne(Video::class);
+    }
 }
