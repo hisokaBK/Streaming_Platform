@@ -37,4 +37,16 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
 });
 
-  
+Route::prefix('stream')->group(function () {
+    Route::get('/streams', [StreamController::class, 'index']);
+    Route::get('/streams/{stream}', [StreamController::class, 'show']);
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/streams', [StreamController::class, 'store']);
+
+        Route::middleware('stream.owner')->group(function () {
+            Route::put('/streams/{stream}', [StreamController::class, 'update']);
+            Route::patch('/streams/{stream}/end', [StreamController::class, 'end']);
+        });
+    });
+});
