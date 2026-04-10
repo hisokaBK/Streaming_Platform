@@ -52,8 +52,15 @@ class StreamController extends Controller
         ], 201);
     }
 
+    public function show(Stream $stream): JsonResponse
+    {
+        $stream->load(['user', 'categories'])
+            ->loadCount(['comments', 'reactions']);
 
-
+        return response()->json([
+            'data' => new StreamResource($stream),
+        ]);
+    }
 
 
 
