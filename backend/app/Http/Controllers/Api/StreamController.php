@@ -23,7 +23,34 @@ class StreamController extends Controller
         return StreamResource::collection($streams);
     }
 
-  
+    public function store(StoreStreamRequest $request): JsonResponse
+    {
+        $stream = DB::transaction(function () use ($request) {
+            $status = $request->status ?? 'live';
+
+            $stream = Stream::create([
+                'user_id' => auth()->id(),
+                'title' => $request->title,
+                'description' => $request->description,
+                'status' => $status,
+                'stream_key' => Str::random(32),
+                'started_at' => now(),
+                'ended_at' => null,
+            ]);
+
+            if ($request->filled('category_ids')) {
+                $stream->categories()->sync($request->category_ids);
+            }
+
+            return $stream->load(['user', 'categories'])
+                ->loadCount(['comments', 'reactions']);
+        });
+
+        return response()->json([
+            'message' => 'Stream created successfully.',
+            'data' => new StreamResource($stream),
+        ], 201);
+    }
 
 
 
