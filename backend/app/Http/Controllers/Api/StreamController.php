@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\Api;
 
 use App\Models\Stream;
 use Illuminate\Support\Str;
@@ -99,6 +99,28 @@ class StreamController extends Controller
 
         return response()->json([
             'message' => 'Stream updated successfully.',
+            'data' => new StreamResource($stream),
+        ]);
+    }
+
+    public function end(Stream $stream): JsonResponse
+    {
+        if ($stream->status === 'ended') {
+            return response()->json([
+                'message' => 'Stream is already ended.',
+            ], 422);
+        }
+
+        $stream->update([
+            'status' => 'ended',
+            'ended_at' => now(),
+        ]);
+
+        $stream->load(['user', 'categories'])
+            ->loadCount(['comments', 'reactions']);
+
+        return response()->json([
+            'message' => 'Stream ended successfully.',
             'data' => new StreamResource($stream),
         ]);
     }

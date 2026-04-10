@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\StreamController;
+
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -34,3 +36,5 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
 
 });
+
+  
