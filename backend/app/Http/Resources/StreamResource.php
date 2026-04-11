@@ -36,6 +36,24 @@ class StreamResource extends JsonResource
 
             'comments_count' => $this->whenCounted('comments'),
             'reactions_count' => $this->whenCounted('reactions'),
+
+            'comments' => $this->whenLoaded('comments', function () {
+                return $this->comments->map(function ($comment) {
+                    return [
+                        'id' => $comment->id,
+                        'content' => $comment->content,
+                        'stream_id' => $comment->stream_id,
+                        'video_id' => $comment->video_id,
+                        'created_at' => $comment->created_at,
+                        'user' => [
+                            'id' => $comment->user?->id,
+                            'name' => $comment->user?->name,
+                            'email' => $comment->user?->email,
+                        ],
+                    ];
+                });
+            }),
+
             'created_at' => $this->created_at,
         ];
     }
