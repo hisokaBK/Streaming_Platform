@@ -22,4 +22,16 @@ class VideoController extends Controller
         return VideoResource::collection($videos);
     }
 
+    public function show(Video $video): JsonResponse
+    {
+        $video->load(['user', 'stream', 'categories']);
+
+        return response()->json([
+            'data' => new VideoResource($video),
+        ]);
+    }
+
+
+
+
 }
