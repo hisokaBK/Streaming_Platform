@@ -11,15 +11,17 @@ class IsStreamOwner
 {
     public function handle(Request $request, Closure $next): Response
     {
+        $stream = $request->route('stream');
 
-        $stream = Stream::findOrFail($stream);
+        if (!$stream instanceof Stream) {
+            $stream = Stream::findOrFail($stream);
+        }
 
         if (!$request->user() || $request->user()->id !== $stream->user_id) {
             return response()->json([
                 'message' => 'Unauthorized. You are not the owner of this stream.'
             ], 403);
         }
-        
 
         return $next($request);
     }
