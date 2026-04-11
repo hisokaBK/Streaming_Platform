@@ -78,5 +78,21 @@ class VideoController extends Controller
         ], 201);
     }
 
+    public function destroy(Video $video): JsonResponse
+    {
+        DB::transaction(function () use ($video) {
+            $storagePath = str_replace(asset('storage') . '/', '', $video->url);
 
+            if ($storagePath && Storage::disk('public')->exists($storagePath)) {
+                Storage::disk('public')->delete($storagePath);
+            }
+
+            $video->categories()->detach();
+            $video->delete();
+        });
+
+        return response()->json([
+            'message' => 'Video deleted successfully.',
+        ]);
+    }
 }
