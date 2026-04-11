@@ -57,7 +57,25 @@ class SubscriptionController extends Controller
         ]);
     }
 
+    public function followers(User $user): JsonResponse
+    {
+        $followers = Subscription::with('subscriber')
+            ->where('streamer_id', $user->id)
+            ->latest()
+            ->paginate(10);
 
+        $data = $followers->through(function ($subscription) {
+            return [
+                'subscription_id' => $subscription->id,
+                'id' => $subscription->subscriber?->id,
+                'name' => $subscription->subscriber?->name,
+                'email' => $subscription->subscriber?->email,
+                'followed_at' => $subscription->created_at,
+            ];
+        });
+
+        return response()->json($data);
+    }
 
 
 }
