@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\StreamController;
+use App\Http\Controllers\Api\VideoController;
 
 
 Route::get('/user', function (Request $request) {
@@ -29,6 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 });
 
+
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
     Route::post('/categories', [CategoryController::class, 'store']);
@@ -36,6 +38,7 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
 
 });
+
 
 Route::prefix('stream')->group(function () {
     Route::get('/streams', [StreamController::class, 'index']);
@@ -47,6 +50,22 @@ Route::prefix('stream')->group(function () {
         Route::middleware('stream.owner')->group(function () {
             Route::put('/streams/{stream}', [StreamController::class, 'update']);
             Route::patch('/streams/{stream}/end', [StreamController::class, 'end']);
+        });
+    });
+});
+
+
+Route::prefix('video')->group(function () {
+
+    Route::get('/videos', [VideoController::class, 'index']);
+    Route::get('/videos/{video}', [VideoController::class, 'show']);
+
+    Route::middleware('auth:sanctum')->group(function () {
+
+        Route::post('/videos', [VideoController::class, 'store']);
+
+        Route::middleware('video.owner')->group(function () {
+            Route::delete('/videos/{video}', [VideoController::class, 'destroy']);
         });
     });
 });
