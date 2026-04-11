@@ -15,12 +15,28 @@ class StreamController extends Controller
 {
     public function index()
     {
-        $streams = Stream::with(['user', 'categories'])
+        $streams = Stream::with(['user.profile', 'categories'])
             ->withCount(['comments', 'reactions'])
             ->latest()
             ->paginate(10);
 
         return StreamResource::collection($streams);
+    }
+
+    public function show(Stream $stream): JsonResponse
+    {
+        $stream->load([
+            'user.profile',
+            'categories',
+            'comments.user.profile',
+        ])->loadCount([
+            'comments',
+            'reactions',
+        ]);
+    
+        return response()->json([
+            'data' => new StreamResource($stream),
+        ]);
     }
 
     public function store(StoreStreamRequest $request): JsonResponse
@@ -50,22 +66,6 @@ class StreamController extends Controller
             'message' => 'Stream created successfully.',
             'data' => new StreamResource($stream),
         ], 201);
-    }
-
-    public function show(Stream $stream): JsonResponse
-    {
-        $stream->load([
-            'user',
-            'categories',
-            'comments.user',
-        ])->loadCount([
-            'comments',
-            'reactions',
-        ]);
-    
-        return response()->json([
-            'data' => new StreamResource($stream),
-        ]);
     }
 
     public function update(UpdateStreamRequest $request, Stream $stream): JsonResponse

@@ -20,11 +20,11 @@ class StreamResource extends JsonResource
             'current_viewers' => $this->current_viewers,
 
             'user' => [
-                'id' => $this->user?->id,
-                'name' => $this->user?->name,
-                'email' => $this->user?->email,
+               'id' => $this->user?->id,
+               'name' => $this->user?->name,
+               'email' => $this->user?->email,
+               'avatar' => $this->user?->profile?->avatar,
             ],
-
             'categories' => $this->whenLoaded('categories', function () {
                 return $this->categories->map(function ($category) {
                     return [
@@ -46,10 +46,11 @@ class StreamResource extends JsonResource
                         'video_id' => $comment->video_id,
                         'created_at' => $comment->created_at,
                         'user' => [
-                            'id' => $comment->user?->id,
-                            'name' => $comment->user?->name,
-                            'email' => $comment->user?->email,
-                        ],
+                             'id' => $comment->user?->id,
+                             'name' => $comment->user?->name,
+                             'email' => $comment->user?->email,
+                             'avatar' => $comment->user?->profile?->avatar,
+                         ],
                     ];
                 });
             }),
