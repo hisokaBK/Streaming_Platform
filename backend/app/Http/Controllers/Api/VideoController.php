@@ -15,29 +15,29 @@ class VideoController extends Controller
 {
     public function index()
     {
-        $videos = Video::with(['user', 'stream', 'categories'])
+        $videos = Video::with(['user.profile', 'stream', 'categories'])
             ->withCount(['comments'])
             ->latest()
             ->paginate(10);
-    
+
         $videos->getCollection()->each(function ($video) {
             $video->stream?->loadCount('reactions');
         });
-    
+
         return VideoResource::collection($videos);
     }
 
     public function show(Video $video): JsonResponse
     {
         $video->load([
-            'user',
+            'user.profile',
             'stream',
             'categories',
-            'comments.user',
+            'comments.user.profile',
         ])->loadCount('comments');
-
+    
         $video->stream?->loadCount('reactions');
-
+    
         return response()->json([
             'data' => new VideoResource($video),
         ]);

@@ -20,6 +20,7 @@ class VideoResource extends JsonResource
                 'id' => $this->user?->id,
                 'name' => $this->user?->name,
                 'email' => $this->user?->email,
+                'avatar' => $this->user?->profile?->avatar,
             ],
 
             'stream' => $this->whenLoaded('stream', function () {
@@ -48,10 +49,11 @@ class VideoResource extends JsonResource
                         'video_id' => $comment->video_id,
                         'created_at' => $comment->created_at,
                         'user' => [
-                            'id' => $comment->user?->id,
-                            'name' => $comment->user?->name,
-                            'email' => $comment->user?->email,
-                        ],
+                             'id' => $comment->user?->id,
+                             'name' => $comment->user?->name,
+                             'email' => $comment->user?->email,
+                             'avatar' => $comment->user?->profile?->avatar,
+                         ],
                     ];
                 });
             }),
