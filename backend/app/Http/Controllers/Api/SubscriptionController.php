@@ -38,7 +38,24 @@ class SubscriptionController extends Controller
         ], 201);
     }
 
-   
+    public function unfollow(User $user): JsonResponse
+    {
+        $subscription = Subscription::where('subscriber_id', auth()->id())
+            ->where('streamer_id', $user->id)
+            ->first();
+
+        if (!$subscription) {
+            return response()->json([
+                'message' => 'Subscription not found.'
+            ], 404);
+        }
+
+        $subscription->delete();
+
+        return response()->json([
+            'message' => 'Unfollowed successfully.',
+        ]);
+    }
 
 
 
