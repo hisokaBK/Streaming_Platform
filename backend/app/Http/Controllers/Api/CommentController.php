@@ -37,6 +37,19 @@ class CommentController extends Controller
         ], 201);
     }
 
+    public function update(UpdateCommentRequest $request, Comment $comment): JsonResponse
+    {
+        $comment->update([
+            'content' => $request->content,
+        ]);
+
+        $comment->load('user');
+
+        return response()->json([
+            'message' => 'Comment updated successfully.',
+            'data' => new CommentResource($comment),
+        ]);
+    }
 
 
 }
