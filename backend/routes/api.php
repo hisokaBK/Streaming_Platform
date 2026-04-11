@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\StreamController;
 use App\Http\Controllers\Api\VideoController;
+use App\Http\Controllers\Api\V1\SubscriptionController;
 
 
 Route::get('/user', function (Request $request) {
@@ -67,5 +68,16 @@ Route::prefix('video')->group(function () {
         Route::middleware('video.owner')->group(function () {
             Route::delete('/videos/{video}', [VideoController::class, 'destroy']);
         });
+    });
+});
+
+
+Route::prefix('subscrip')->group(function () {
+    Route::get('/users/{user}/followers', [SubscriptionController::class, 'followers']);
+    Route::get('/users/{user}/following', [SubscriptionController::class, 'following']);
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/subscriptions/follow', [SubscriptionController::class, 'follow']);
+        Route::delete('/subscriptions/{user}/unfollow', [SubscriptionController::class, 'unfollow']);
     });
 });
