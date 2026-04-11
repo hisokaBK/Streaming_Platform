@@ -32,4 +32,8 @@ class Video extends Model
     {
         return $this->belongsToMany(Category::class, 'video_category');
     }
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
 }

@@ -24,8 +24,8 @@ class VideoController extends Controller
 
     public function show(Video $video): JsonResponse
     {
-        $video->load(['user', 'stream', 'categories']);
-
+        $video->load(['user', 'stream', 'categories', 'comments.user']);
+    
         return response()->json([
             'data' => new VideoResource($video),
         ]);
