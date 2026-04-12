@@ -16,6 +16,7 @@ class ConversationResource extends JsonResource
                 'email' => $this['participant']->email,
                 'avatar' => $this['participant']->profile?->avatar,
             ],
+
             'last_message' => [
                 'id' => $this['last_message']->id,
                 'content' => $this['last_message']->content,
@@ -24,6 +25,7 @@ class ConversationResource extends JsonResource
                 'receiver_id' => $this['last_message']->receiver_id,
                 'created_at' => $this['last_message']->created_at,
             ],
+
             'unread_count' => $this['unread_count'],
         ];
     }

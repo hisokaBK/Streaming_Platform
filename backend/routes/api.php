@@ -97,5 +97,6 @@ Route::prefix('reaction')->group(function () {
 Route::prefix('messages')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/messages', [MessageController::class, 'store']);
+        Route::get('/conversations', [MessageController::class, 'conversations']);
     });
 });
