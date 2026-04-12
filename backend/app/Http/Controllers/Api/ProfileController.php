@@ -13,7 +13,7 @@ class ProfileController extends Controller
 {
     public function show(Request $request): JsonResponse
     {
-        $profile = $request->user()->profile;
+        $profile = $request->user()->profile()->with('user')->first();
 
         return response()->json([
             'message' => 'Profile retrieved successfully',
@@ -27,19 +27,20 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         $profile = $user->profile;
-
+    
         $data = $request->validated();
-
+    
         if ($request->hasFile('avatar')) {
             $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
         }
-
+    
         if ($request->hasFile('background_image')) {
             $data['background_image'] = $request->file('background_image')->store('backgrounds', 'public');
         }
-
+    
         $profile->update($data);
-
+        $profile->load('user');
+    
         return response()->json([
             'message' => 'Profile updated successfully',
             'data' => [

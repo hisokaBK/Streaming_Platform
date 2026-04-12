@@ -14,6 +14,14 @@ class ProfileResource extends JsonResource
             'avatar' => $this->avatar ? asset('storage/' . $this->avatar) : null,
             'background_image' => $this->background_image ? asset('storage/' . $this->background_image) : null,
             'bio' => $this->bio,
+
+            'user' => [
+                'id' => $this->user?->id,
+                'name' => $this->user?->name,
+                'email' => $this->user?->email,
+                'role' => $this->user?->role,
+            ],
+
             'created_at' => $this->created_at,
         ];
     }
