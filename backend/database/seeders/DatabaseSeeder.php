@@ -37,24 +37,37 @@ class DatabaseSeeder extends Seeder
             );
         });
 
-        $videos = $streams->map(function ($stream) use ($categories) {
-            $video = Video::factory()->create([
-                'user_id' => $stream->user_id,
-                'stream_id' => $stream->id,
-            ]);
+        $videos = $streams
+            ->where('status', 'ended')
+            ->map(function ($stream) use ($categories) {
+                $video = Video::factory()->create([
+                    'user_id' => $stream->user_id,
+                    'stream_id' => $stream->id,
+                    'title' => $stream->title,
+                    'description' => $stream->description,
+                ]);
 
-            if (method_exists($video, 'categories')) {
                 $video->categories()->attach(
-                    $categories->random(rand(1, 2))->pluck('id')->toArray()
+                    $stream->categories->pluck('id')->toArray()
                 );
-            }
 
-            return $video;
-        });
+                return $video;
+            });
+
+        foreach ($streams as $stream) {
+            $randomUsers = $users->random(rand(2, 5));
+
+            foreach ($randomUsers as $user) {
+                Comment::factory()->create([
+                    'user_id' => $user->id,
+                    'stream_id' => $stream->id,
+                    'video_id' => null,
+                ]);
+            }
+        }
 
         foreach ($videos as $video) {
-            Comment::factory(3)->create([
-                'user_id' => $video->user_id,
+            $video->stream->comments()->update([
                 'video_id' => $video->id,
             ]);
         }
@@ -72,7 +85,7 @@ class DatabaseSeeder extends Seeder
             $randomUsers = $users->random(rand(1, 5));
 
             foreach ($randomUsers as $user) {
-                Reaction::factory()->create([
+                Reaction::factory(rand(1, 3))->create([
                     'user_id' => $user->id,
                     'stream_id' => $stream->id,
                 ]);

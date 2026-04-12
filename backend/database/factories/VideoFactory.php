@@ -2,31 +2,24 @@
 
 namespace Database\Factories;
 
-use App\Models\Video;
+use App\Models\User;
+use App\Models\Stream;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
 
 /**
- * @extends Factory<Video>
+ * @extends Factory<\App\Models\Video>
  */
 class VideoFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
+            'user_id' => User::factory(),
+            'stream_id' => Stream::factory(),
             'title' => fake()->sentence(),
-            'slug' => Str::slug(fake()->unique()->sentence()),
             'description' => fake()->paragraph(),
-            'thumbnail' => null,
-            'video_url' => 'videos/test.mp4',
-            'duration' => rand(60, 3600),
-            'visibility' => 'public',
-            'published_at' => now(),
+            'url' => 'videos/test.mp4',
+            'duration' => fake()->numberBetween(60, 3600),
         ];
     }
 }
