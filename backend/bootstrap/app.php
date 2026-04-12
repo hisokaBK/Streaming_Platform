@@ -16,11 +16,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn (Request $request) => null);
 
         $middleware->alias([
-            
+
         'admin' => \App\Http\Middleware\AdminMiddleware::class,
         'stream.owner' => \App\Http\Middleware\IsStreamOwner::class,
         'video.owner' => \App\Http\Middleware\EnsureVideoOwner::class,
         'comment.owner' => \App\Http\Middleware\EnsureCommentOwner::class,
+        'profile.owner' => \App\Http\Middleware\EnsureProfileOwner::class,
 
         ]);
     })
