@@ -24,7 +24,6 @@ return Application::configure(basePath: dirname(__DIR__))
         'profile.owner' => \App\Http\Middleware\EnsureProfileOwner::class,
         'stream.status.live' => \App\Http\Middleware\EnsureUserHasNoLiveStream::class,
 
-
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

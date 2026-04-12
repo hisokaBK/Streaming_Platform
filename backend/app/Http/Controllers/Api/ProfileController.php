@@ -35,8 +35,22 @@ class ProfileController extends Controller
             ->take(5)
             ->get();
 
+        $videosPreview = $authUser->videos()
+            ->withCount('comments')
+            ->latest()
+            ->take(5)
+            ->get();
+
+        $liveStream = $authUser->streams()
+            ->withCount(['comments', 'reactions'])
+            ->where('status', 'live')
+            ->latest()
+            ->first();
+
         $profile->followers_preview = $followersPreview;
         $profile->following_preview = $followingPreview;
+        $profile->videos_preview = $videosPreview;
+        $profile->live_stream = $liveStream;
 
         return response()->json([
             'message' => 'Profile retrieved successfully',
@@ -67,8 +81,22 @@ class ProfileController extends Controller
             ->take(5)
             ->get();
 
+        $videosPreview = $user->videos()
+            ->withCount('comments')
+            ->latest()
+            ->take(5)
+            ->get();
+
+        $liveStream = $user->streams()
+            ->withCount(['comments', 'reactions'])
+            ->where('status', 'live')
+            ->latest()
+            ->first();
+
         $profile->followers_preview = $followersPreview;
         $profile->following_preview = $followingPreview;
+        $profile->videos_preview = $videosPreview;
+        $profile->live_stream = $liveStream;
 
         return response()->json([
             'message' => 'Profile retrieved successfully',
@@ -115,8 +143,22 @@ class ProfileController extends Controller
             ->take(5)
             ->get();
 
+        $videosPreview = $authUser->videos()
+            ->withCount('comments')
+            ->latest()
+            ->take(5)
+            ->get();
+
+        $liveStream = $authUser->streams()
+            ->withCount(['comments', 'reactions'])
+            ->where('status', 'live')
+            ->latest()
+            ->first();
+
         $profile->followers_preview = $followersPreview;
         $profile->following_preview = $followingPreview;
+        $profile->videos_preview = $videosPreview;
+        $profile->live_stream = $liveStream;
 
         return response()->json([
             'message' => 'Profile updated successfully',

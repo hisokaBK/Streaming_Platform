@@ -49,7 +49,9 @@ Route::prefix('stream')->group(function () {
     Route::get('/streams/{stream}', [StreamController::class, 'show']);
 
     Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/streams', [StreamController::class, 'store']);
+        Route::middleware('stream.status.live')->group(function () {
+            Route::post('/streams', [StreamController::class, 'store']);
+        });
 
         Route::middleware('stream.owner')->group(function () {
             Route::put('/streams/{stream}', [StreamController::class, 'update']);
