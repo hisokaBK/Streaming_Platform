@@ -6,31 +6,25 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-   public function up(): void
-   {
-       Schema::create('reactions', function (Blueprint $table) {
-           $table->id();
-   
-           $table->foreignId('user_id')
-                 ->constrained()
-                 ->cascadeOnDelete();
-   
-           $table->foreignId('stream_id')
-                 ->constrained()
-                 ->cascadeOnDelete();
-   
-           $table->string('type'); // like, love, haha...
-   
-           $table->timestamps();
-       });
-   }
+    public function up(): void
+    {
+        Schema::create('reactions', function (Blueprint $table) {
+            $table->id();
 
-    /**
-     * Reverse the migrations.
-     */
+            $table->foreignId('user_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->foreignId('stream_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->enum('type', ['like', 'love', 'haha', 'wow', 'sad', 'angry']);
+
+            $table->timestamps();
+        });
+    }
+
     public function down(): void
     {
         Schema::dropIfExists('reactions');

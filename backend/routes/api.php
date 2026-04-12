@@ -35,7 +35,6 @@ Route::prefix('/profile')->middleware('auth:sanctum')->group(function () {
 });
 
 
-
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
     Route::post('/categories', [CategoryController::class, 'store']);
