@@ -23,14 +23,6 @@ class VideoResource extends JsonResource
                 'avatar' => $this->user?->profile?->avatar,
             ],
 
-            'stream' => $this->whenLoaded('stream', function () {
-                return [
-                    'id' => $this->stream?->id,
-                    'title' => $this->stream?->title,
-                    'status' => $this->stream?->status,
-                ];
-            }),
-
             'categories' => $this->whenLoaded('categories', function () {
                 return $this->categories->map(function ($category) {
                     return [
@@ -58,7 +50,6 @@ class VideoResource extends JsonResource
                 });
             }),
 
-            'created_at' => $this->created_at,
             'stream' => $this->whenLoaded('stream', function () {
                 return [
                     'id' => $this->stream?->id,
@@ -67,6 +58,8 @@ class VideoResource extends JsonResource
                     'reactions_count' => $this->stream?->reactions_count,
                 ];
             }),
+            
+            'created_at' => $this->created_at,
         ];
     }
 }
