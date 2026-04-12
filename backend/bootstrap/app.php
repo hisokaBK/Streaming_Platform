@@ -22,6 +22,8 @@ return Application::configure(basePath: dirname(__DIR__))
         'video.owner' => \App\Http\Middleware\EnsureVideoOwner::class,
         'comment.owner' => \App\Http\Middleware\EnsureCommentOwner::class,
         'profile.owner' => \App\Http\Middleware\EnsureProfileOwner::class,
+        'stream.status.live' => \App\Http\Middleware\EnsureUserHasNoLiveStream::class,
+
 
         ]);
     })
