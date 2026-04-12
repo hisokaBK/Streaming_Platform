@@ -6,7 +6,9 @@ use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\StreamController;
 use App\Http\Controllers\Api\VideoController;
-use App\Http\Controllers\Api\V1\SubscriptionController;
+use App\Http\Controllers\Api\SubscriptionController;
+use App\Http\Controllers\Api\ProfileController;
+
 
 
 Route::get('/user', function (Request $request) {
@@ -24,12 +26,14 @@ Route::prefix('auth')->group(function () {
 });
 
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::prefix('/profile')->middleware('auth:sanctum')->group(function () {
+    Route::get('/profiles/{profile}', [ProfileController::class, 'show']);
 
-    Route::get('/profile', [ProfileController::class, 'show']);
-    Route::put('/profile', [ProfileController::class, 'update']);
-
+    Route::middleware('profile.owner')->group(function () {
+        Route::put('/profiles/{profile}', [ProfileController::class, 'update']);
+    });
 });
+
 
 
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
@@ -81,3 +85,5 @@ Route::prefix('subscrip')->group(function () {
         Route::delete('/subscriptions/{user}/unfollow', [SubscriptionController::class, 'unfollow']);
     });
 });
+
+
