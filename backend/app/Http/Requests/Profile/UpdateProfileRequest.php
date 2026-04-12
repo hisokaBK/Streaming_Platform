@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Profile;
 
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -14,9 +14,9 @@ class UpdateProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'avatar' => 'nullable|image|max:2048',
-            'background_image' => 'nullable|image|max:4096',
-            'bio' => 'nullable|string|max:1000',
+            'bio' => ['nullable', 'string'],
+            'avatar' => ['nullable', 'image', 'max:5120'],
+            'background_image' => ['nullable', 'image', 'max:5120'],
         ];
     }
 }

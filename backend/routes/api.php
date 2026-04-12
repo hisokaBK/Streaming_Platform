@@ -30,7 +30,7 @@ Route::prefix('/profile')->middleware('auth:sanctum')->group(function () {
     Route::get('/profile/{user}', [ProfileController::class, 'show']);
 
     Route::middleware('profile.owner')->group(function () {
-        Route::put('/profile/{profile}', [ProfileController::class, 'update']);
+        Route::put('/profile', [ProfileController::class, 'update']);
     });
 });
 

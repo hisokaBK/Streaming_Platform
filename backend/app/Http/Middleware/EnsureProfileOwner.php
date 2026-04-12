@@ -11,16 +11,13 @@ class EnsureProfileOwner
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $profile = $request->route('profile');
 
-        if (!$profile instanceof Profile) {
-            $profile = Profile::findOrFail($profile);
-        }
+        $profile = $request->user()->profile;
 
-        if (!$request->user() || $request->user()->id !== $profile->user_id) {
+        if (!$profile) {
             return response()->json([
-                'message' => 'Unauthorized. You are not the owner of this profile.'
-            ], 403);
+                'message' => 'Profile not found.'
+            ], 404);
         }
 
         return $next($request);
