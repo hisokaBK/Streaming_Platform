@@ -7,8 +7,6 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\StreamController;
 use App\Http\Controllers\Api\VideoController;
 use App\Http\Controllers\Api\SubscriptionController;
-use App\Http\Controllers\Api\ProfileController;
-
 
 
 Route::get('/user', function (Request $request) {
