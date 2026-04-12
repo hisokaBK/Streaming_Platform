@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\StreamController;
 use App\Http\Controllers\Api\VideoController;
 use App\Http\Controllers\Api\SubscriptionController;
+use App\Http\Controllers\Api\ReactionController;
 
 
 Route::get('/user', function (Request $request) {
@@ -83,4 +84,8 @@ Route::prefix('subscrip')->group(function () {
     });
 });
 
-
+Route::prefix('reaction')->group(function () {
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/reactions', [ReactionController::class, 'store']);
+    });
+});
