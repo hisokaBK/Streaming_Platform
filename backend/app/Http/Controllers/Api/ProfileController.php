@@ -2,18 +2,40 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\UpdateProfileRequest;
-use App\Http\Resources\ProfileResource;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\JsonResponse;
+use App\Http\Controllers\Controller;
+use App\Http\Resources\ProfileResource;
+use App\Http\Requests\Profile\UpdateProfileRequest;
+use App\Models\Subscription;
 
 class ProfileController extends Controller
 {
     public function show(Request $request): JsonResponse
     {
-        $profile = $request->user()->profile()->with('user')->first();
+        $authUser = $request->user();
+
+        $profile = $authUser->profile()->with('user')->first();
+
+        $profile->user->loadCount([
+            'followerSubscriptions',
+            'followingSubscriptions',
+        ]);
+
+        $followersPreview = Subscription::with('subscriber.profile')
+            ->where('streamer_id', $authUser->id)
+            ->latest()
+            ->take(5)
+            ->get();
+
+        $followingPreview = Subscription::with('streamer.profile')
+            ->where('subscriber_id', $authUser->id)
+            ->latest()
+            ->take(5)
+            ->get();
+
+        $profile->followers_preview = $followersPreview;
+        $profile->following_preview = $followingPreview;
 
         return response()->json([
             'message' => 'Profile retrieved successfully',
@@ -25,22 +47,44 @@ class ProfileController extends Controller
 
     public function update(UpdateProfileRequest $request): JsonResponse
     {
-        $user = $request->user();
-        $profile = $user->profile;
-    
+        $authUser = $request->user();
+
+        $profile = $authUser->profile()->with('user')->first();
+
         $data = $request->validated();
-    
+
         if ($request->hasFile('avatar')) {
             $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
         }
-    
+
         if ($request->hasFile('background_image')) {
             $data['background_image'] = $request->file('background_image')->store('backgrounds', 'public');
         }
-    
+
         $profile->update($data);
+
         $profile->load('user');
-    
+
+        $profile->user->loadCount([
+            'followerSubscriptions',
+            'followingSubscriptions',
+        ]);
+
+        $followersPreview = Subscription::with('subscriber.profile')
+            ->where('streamer_id', $authUser->id)
+            ->latest()
+            ->take(5)
+            ->get();
+
+        $followingPreview = Subscription::with('streamer.profile')
+            ->where('subscriber_id', $authUser->id)
+            ->latest()
+            ->take(5)
+            ->get();
+
+        $profile->followers_preview = $followersPreview;
+        $profile->following_preview = $followingPreview;
+
         return response()->json([
             'message' => 'Profile updated successfully',
             'data' => [
