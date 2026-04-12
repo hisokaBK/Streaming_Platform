@@ -13,7 +13,7 @@ class MessageController extends Controller
     public function store(StoreMessageRequest $request): JsonResponse
     {
         $senderId = auth()->id();
-        $receiverId = (int) $request->receiver_id;
+        $receiverId = $request->receiver_id;
 
         if ($senderId === $receiverId) {
             return response()->json([
