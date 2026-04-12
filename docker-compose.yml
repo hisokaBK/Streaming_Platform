@@ -44,5 +44,16 @@ services:
     ports:
       - "5432:5432"
 
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: streaming_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@stream.com
+      PGADMIN_DEFAULT_PASSWORD: stream
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
 volumes:
   pgdata:

@@ -8,10 +8,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ProfileResource;
 use App\Http\Requests\Profile\UpdateProfileRequest;
 use App\Models\Subscription;
+use App\Models\User;
 
 class ProfileController extends Controller
 {
-    public function show(Request $request): JsonResponse
+    public function showMyProfile(Request $request): JsonResponse
     {
         $authUser = $request->user();
 
@@ -30,6 +31,38 @@ class ProfileController extends Controller
 
         $followingPreview = Subscription::with('streamer.profile')
             ->where('subscriber_id', $authUser->id)
+            ->latest()
+            ->take(5)
+            ->get();
+
+        $profile->followers_preview = $followersPreview;
+        $profile->following_preview = $followingPreview;
+
+        return response()->json([
+            'message' => 'Profile retrieved successfully',
+            'data' => [
+                'profile' => new ProfileResource($profile),
+            ],
+        ]);
+    }
+
+    public function show(User $user, Request $request): JsonResponse
+    {
+        $profile = $user->profile()->with('user')->firstOrFail();
+
+        $profile->user->loadCount([
+            'followerSubscriptions',
+            'followingSubscriptions',
+        ]);
+
+        $followersPreview = Subscription::with('subscriber.profile')
+            ->where('streamer_id', $user->id)
+            ->latest()
+            ->take(5)
+            ->get();
+
+        $followingPreview = Subscription::with('streamer.profile')
+            ->where('subscriber_id', $user->id)
             ->latest()
             ->take(5)
             ->get();

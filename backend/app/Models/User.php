@@ -71,13 +71,13 @@ class User extends Authenticatable
         return $this->hasMany(Message::class, 'receiver_id');
     }
 
-    public function subscriptions()
-    {
-        return $this->hasMany(Subscription::class, 'subscriber_id');
-    }
-
-    public function subscribers()
+    public function followerSubscriptions()
     {
         return $this->hasMany(Subscription::class, 'streamer_id');
+    }
+
+    public function followingSubscriptions()
+    {
+        return $this->hasMany(Subscription::class, 'subscriber_id');
     }
 }

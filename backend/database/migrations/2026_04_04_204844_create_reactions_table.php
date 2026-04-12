@@ -19,7 +19,7 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
-            $table->enum('type', ['like', 'love', 'haha', 'wow', 'sad', 'angry']);
+            $table->enum('type', ['like', 'love', 'haha', 'wow', 'sad', 'angry', 'clap','fire']);
 
             $table->timestamps();
         });

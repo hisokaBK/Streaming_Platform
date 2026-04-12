@@ -18,7 +18,7 @@ class ReactionFactory extends Factory
     public function definition(): array
     {
          return [
-              'type' => fake()->randomElement(['like', 'love', 'haha', 'fire', 'clap']),
+              'type' => fake()->randomElement(['like', 'love', 'haha', 'wow', 'sad', 'angry', 'clap','fire']),
          ];
     }
 }

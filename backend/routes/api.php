@@ -26,10 +26,11 @@ Route::prefix('auth')->group(function () {
 
 
 Route::prefix('/profile')->middleware('auth:sanctum')->group(function () {
-    Route::get('/profiles/{profile}', [ProfileController::class, 'show']);
+    Route::get('/profile', [ProfileController::class, 'showMyProfile']);
+    Route::get('/profile/{user}', [ProfileController::class, 'show']);
 
     Route::middleware('profile.owner')->group(function () {
-        Route::put('/profiles/{profile}', [ProfileController::class, 'update']);
+        Route::put('/profile/{profile}', [ProfileController::class, 'update']);
     });
 });
 
