@@ -47,10 +47,28 @@ class ProfileController extends Controller
             ->latest()
             ->first();
 
+        $streamsCount = $authUser->streams()->count();
+        $videosCount = $authUser->videos()->count();
+
+        $mostReactedVideo = $authUser->videos()
+            ->with('stream')
+            ->get()
+            ->sortByDesc(function ($video) {
+                return $video->stream?->reactions()->count() ?? 0;
+            })
+            ->first();
+
+        if ($mostReactedVideo && $mostReactedVideo->stream) {
+            $mostReactedVideo->stream->loadCount('reactions');
+        }
+
         $profile->followers_preview = $followersPreview;
         $profile->following_preview = $followingPreview;
         $profile->videos_preview = $videosPreview;
         $profile->live_stream = $liveStream;
+        $profile->streams_count = $streamsCount;
+        $profile->videos_count = $videosCount;
+        $profile->most_reacted_video = $mostReactedVideo;
 
         return response()->json([
             'message' => 'Profile retrieved successfully',
@@ -93,10 +111,28 @@ class ProfileController extends Controller
             ->latest()
             ->first();
 
+        $streamsCount = $user->streams()->count();
+        $videosCount = $user->videos()->count();
+
+        $mostReactedVideo = $user->videos()
+            ->with('stream')
+            ->get()
+            ->sortByDesc(function ($video) {
+                return $video->stream?->reactions()->count() ?? 0;
+            })
+            ->first();
+
+        if ($mostReactedVideo && $mostReactedVideo->stream) {
+            $mostReactedVideo->stream->loadCount('reactions');
+        }
+
         $profile->followers_preview = $followersPreview;
         $profile->following_preview = $followingPreview;
         $profile->videos_preview = $videosPreview;
         $profile->live_stream = $liveStream;
+        $profile->streams_count = $streamsCount;
+        $profile->videos_count = $videosCount;
+        $profile->most_reacted_video = $mostReactedVideo;
 
         return response()->json([
             'message' => 'Profile retrieved successfully',
