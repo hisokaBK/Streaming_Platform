@@ -73,25 +73,25 @@ class StreamController extends Controller
     {
         $stream = DB::transaction(function () use ($request) {
             $status = $request->status ?? 'live';
-    
+
             $stream = Stream::create([
                 'user_id' => auth()->id(),
                 'title' => $request->title,
                 'description' => $request->description,
                 'status' => $status,
                 'stream_key' => Str::random(32),
-                'started_at' => now(),
+                'started_at' => no2w(),
                 'ended_at' => null,
             ]);
-    
+
             if ($request->filled('category_ids')) {
                 $stream->categories()->sync($request->category_ids);
             }
-    
+
             if ($status === 'live') {
                 $followerIds = Subscription::where('streamer_id', auth()->id())
                     ->pluck('subscriber_id');
-    
+
                 foreach ($followerIds as $followerId) {
                     Notification::create([
                         'user_id' => $followerId,
@@ -100,7 +100,7 @@ class StreamController extends Controller
                     ]);
                 }
             }
-    
+
             return $stream->load([
                 'user.profile',
                 'categories',
@@ -110,7 +110,7 @@ class StreamController extends Controller
                 'reactions',
             ]);
         });
-    
+
         return response()->json([
             'message' => 'Stream created successfully.',
             'data' => new StreamResource($stream),

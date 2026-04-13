@@ -17,6 +17,7 @@ class UserResource extends JsonResource
             'is_banned' => $this->is_banned,
             'banned_at' => $this->banned_at,
             'created_at' => $this->created_at,
+            
             'profile' => $this->whenLoaded('profile', function () {
                 return [
                     'id' => $this->profile?->id,
