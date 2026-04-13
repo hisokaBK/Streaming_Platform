@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\ReactionController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\Admin\StatisticController;
+use App\Http\Controllers\Api\Admin\UserController;
+
 
 
 
@@ -106,10 +108,12 @@ Route::prefix('notification')->middleware('auth:sanctum','user.banned')->group(f
 
 
 Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function () {
-    Route::get('/statistics', [StatisticController::class, 'dashboard']);
-});
 
-Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+    Route::get('/statistics', [StatisticController::class, 'dashboard']);
+    
+    Route::get('/users', [UserController::class, 'index']);
+    Route::patch('/users/{user}/ban', [UserController::class, 'ban']);
+    Route::patch('/users/{user}/unban', [UserController::class, 'unban']);
 
     Route::post('/categories', [CategoryController::class, 'store']);
     Route::put('/categories/{category}', [CategoryController::class, 'update']);
