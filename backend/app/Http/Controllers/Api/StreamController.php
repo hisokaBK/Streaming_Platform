@@ -56,13 +56,13 @@ class StreamController extends Controller
                 'reactions',
             ])
             ->find($id);
-    
+
         if (!$stream) {
             return response()->json([
                 'message' => 'Stream not found.',
             ], 404);
         }
-    
+
         return response()->json([
             'message' => 'Stream retrieved successfully.',
             'data' => new StreamResource($stream),
@@ -73,7 +73,7 @@ class StreamController extends Controller
     {
         $stream = DB::transaction(function () use ($request) {
             $status = $request->status ?? 'live';
-
+    
             $stream = Stream::create([
                 'user_id' => auth()->id(),
                 'title' => $request->title,
@@ -83,15 +83,34 @@ class StreamController extends Controller
                 'started_at' => now(),
                 'ended_at' => null,
             ]);
-
+    
             if ($request->filled('category_ids')) {
                 $stream->categories()->sync($request->category_ids);
             }
-
-            return $stream->load(['user', 'categories'])
-                ->loadCount(['comments', 'reactions']);
+    
+            if ($status === 'live') {
+                $followerIds = Subscription::where('streamer_id', auth()->id())
+                    ->pluck('subscriber_id');
+    
+                foreach ($followerIds as $followerId) {
+                    Notification::create([
+                        'user_id' => $followerId,
+                        'content' => auth()->user()->name . ' started a new live stream: ' . $stream->title,
+                        'is_read' => false,
+                    ]);
+                }
+            }
+    
+            return $stream->load([
+                'user.profile',
+                'categories',
+                'reactions.user.profile',
+            ])->loadCount([
+                'comments',
+                'reactions',
+            ]);
         });
-
+    
         return response()->json([
             'message' => 'Stream created successfully.',
             'data' => new StreamResource($stream),

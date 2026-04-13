@@ -10,6 +10,7 @@ use App\Models\Stream;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Video;
+use App\Models\Notification;u 
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -101,5 +102,12 @@ class DatabaseSeeder extends Seeder
                 'streamer_id' => $streamer,
             ]);
         }
+
+        foreach ($users as $user) {
+         Notification::factory(rand(2, 5))->create([
+             'user_id' => $user->id,
+         ]);
+        }
+
     }
 }
