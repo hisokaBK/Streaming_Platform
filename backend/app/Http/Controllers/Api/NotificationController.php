@@ -27,6 +27,34 @@ class NotificationController extends Controller
         ]);
     }
 
+    public function markAsRead(Notification $notification): JsonResponse
+    {
+        if ((int) $notification->user_id !== (int) auth()->id()) {
+            return response()->json([
+                'message' => 'Unauthorized. You do not own this notification.',
+            ], 403);
+        }
 
+        $notification->update([
+            'is_read' => true,
+        ]);
 
+        return response()->json([
+            'message' => 'Notification marked as read successfully.',
+            'data' => new NotificationResource($notification),
+        ]);
+    }
+
+    public function markAllAsRead(): JsonResponse
+    {
+        Notification::where('user_id', auth()->id())
+            ->where('is_read', false)
+            ->update([
+                'is_read' => true,
+            ]);
+
+        return response()->json([
+            'message' => 'All notifications marked as read successfully.',
+        ]);
+    }
 }
