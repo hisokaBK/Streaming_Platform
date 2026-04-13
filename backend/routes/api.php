@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\VideoController;
 use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\ReactionController;
 use App\Http\Controllers\Api\MessageController;
+use App\Http\Controllers\Api\NotificationController;
+
 
 
 Route::get('/user', function (Request $request) {
@@ -100,4 +102,10 @@ Route::prefix('messages')->group(function () {
         Route::get('/messages/{user}', [MessageController::class, 'messages']);
 
     });
+});
+
+Route::prefix('notification')->middleware('auth:sanctum')->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 });
