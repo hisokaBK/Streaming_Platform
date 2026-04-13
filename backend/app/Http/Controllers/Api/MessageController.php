@@ -80,6 +80,7 @@ class MessageController extends Controller
                 'participant' => $participant,
                 'last_message' => $lastMessage,
                 'unread_count' => $unreadCount,
+                'has_unread' => $unreadCount > 0,
             ];
         })
         ->sortByDesc(function ($conversation) {
@@ -102,6 +103,13 @@ class MessageController extends Controller
                 'message' => 'You cannot open a conversation with yourself.',
             ], 422);
         }
+
+        Message::where('sender_id', $user->id)
+        ->where('receiver_id', $authUserId)
+        ->where('is_read', false)
+        ->update([
+            'is_read' => true,
+        ]);
 
         $messages = Message::with([
                 'sender.profile',

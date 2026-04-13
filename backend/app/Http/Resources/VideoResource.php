@@ -9,12 +9,23 @@ class VideoResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $reactionTypes = ['like', 'love', 'haha', 'wow', 'sad', 'angry', 'clap'];
+
+        $reactionsSummary = collect($reactionTypes)->mapWithKeys(function ($type) {
+            return [
+                $type => $this->stream && $this->stream->relationLoaded('reactions')
+                    ? $this->stream->reactions->where('type', $type)->count()
+                    : 0,
+            ];
+        });
+
         return [
             'id' => $this->id,
             'title' => $this->title,
             'description' => $this->description,
             'url' => $this->url,
             'duration' => $this->duration,
+            'comments_count' => $this->comments_count ?? 0,
 
             'user' => [
                 'id' => $this->user?->id,
@@ -41,24 +52,25 @@ class VideoResource extends JsonResource
                         'video_id' => $comment->video_id,
                         'created_at' => $comment->created_at,
                         'user' => [
-                             'id' => $comment->user?->id,
-                             'name' => $comment->user?->name,
-                             'email' => $comment->user?->email,
-                             'avatar' => $comment->user?->profile?->avatar,
-                         ],
+                            'id' => $comment->user?->id,
+                            'name' => $comment->user?->name,
+                            'email' => $comment->user?->email,
+                            'avatar' => $comment->user?->profile?->avatar,
+                        ],
                     ];
                 });
             }),
 
-            'stream' => $this->whenLoaded('stream', function () {
+            'stream' => $this->whenLoaded('stream', function () use ($reactionsSummary) {
                 return [
                     'id' => $this->stream?->id,
                     'title' => $this->stream?->title,
                     'status' => $this->stream?->status,
-                    'reactions_count' => $this->stream?->reactions_count,
+                    'reactions_count' => $this->stream?->reactions_count ?? 0,
+                    'reactions_summary' => $reactionsSummary,
                 ];
             }),
-            
+
             'created_at' => $this->created_at,
         ];
     }

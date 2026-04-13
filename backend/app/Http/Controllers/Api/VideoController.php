@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\Api;
 
 use App\Models\Video;
 use App\Models\Stream;
@@ -13,9 +13,13 @@ use App\Http\Requests\Video\StoreVideoRequest;
 
 class VideoController extends Controller
 {
-    public function index()
+    public function index(): JsonResponse
     {
-        $videos = Video::with(['user.profile', 'stream', 'categories'])
+        $videos = Video::with([
+                'user.profile',
+                'stream.reactions.user.profile',
+                'categories'
+            ])
             ->withCount(['comments'])
             ->latest()
             ->paginate(10);
@@ -24,21 +28,46 @@ class VideoController extends Controller
             $video->stream?->loadCount('reactions');
         });
 
-        return VideoResource::collection($videos);
+        if ($videos->isEmpty()) {
+            return response()->json([
+                'message' => 'No videos found.',
+                'data' => [],
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => 'Videos retrieved successfully.',
+            'data' => VideoResource::collection($videos),
+            'meta' => [
+                'current_page' => $videos->currentPage(),
+                'last_page' => $videos->lastPage(),
+                'per_page' => $videos->perPage(),
+                'total' => $videos->total(),
+            ],
+        ]);
     }
 
-    public function show(Video $video): JsonResponse
+    public function show($id): JsonResponse
     {
-        $video->load([
-            'user.profile',
-            'stream',
-            'categories',
-            'comments.user.profile',
-        ])->loadCount('comments');
+        $video = Video::with([
+                'user.profile',
+                'stream.reactions.user.profile',
+                'categories',
+                'comments.user.profile',
+            ])
+            ->withCount('comments')
+            ->find($id);
+    
+        if (!$video) {
+            return response()->json([
+                'message' => 'Video not found.',
+            ], 404);
+        }
     
         $video->stream?->loadCount('reactions');
     
         return response()->json([
+            'message' => 'Video retrieved successfully.',
             'data' => new VideoResource($video),
         ]);
     }

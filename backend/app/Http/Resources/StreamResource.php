@@ -9,6 +9,16 @@ class StreamResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $reactionTypes = ['like', 'love', 'haha', 'wow', 'sad', 'angry', 'clap'];
+
+        $reactionsSummary = collect($reactionTypes)->mapWithKeys(function ($type) {
+            return [
+                $type => $this->whenLoaded('reactions', function () use ($type) {
+                    return $this->reactions->where('type', $type)->count();
+                }, 0),
+            ];
+        });
+
         return [
             'id' => $this->id,
             'title' => $this->title,
@@ -20,11 +30,12 @@ class StreamResource extends JsonResource
             'current_viewers' => $this->current_viewers,
 
             'user' => [
-               'id' => $this->user?->id,
-               'name' => $this->user?->name,
-               'email' => $this->user?->email,
-               'avatar' => $this->user?->profile?->avatar,
+                'id' => $this->user?->id,
+                'name' => $this->user?->name,
+                'email' => $this->user?->email,
+                'avatar' => $this->user?->profile?->avatar,
             ],
+
             'categories' => $this->whenLoaded('categories', function () {
                 return $this->categories->map(function ($category) {
                     return [
@@ -36,6 +47,7 @@ class StreamResource extends JsonResource
 
             'comments_count' => $this->whenCounted('comments'),
             'reactions_count' => $this->whenCounted('reactions'),
+            'reactions_summary' => $reactionsSummary,
 
             'comments' => $this->whenLoaded('comments', function () {
                 return $this->comments->map(function ($comment) {
@@ -46,11 +58,29 @@ class StreamResource extends JsonResource
                         'video_id' => $comment->video_id,
                         'created_at' => $comment->created_at,
                         'user' => [
-                             'id' => $comment->user?->id,
-                             'name' => $comment->user?->name,
-                             'email' => $comment->user?->email,
-                             'avatar' => $comment->user?->profile?->avatar,
-                         ],
+                            'id' => $comment->user?->id,
+                            'name' => $comment->user?->name,
+                            'email' => $comment->user?->email,
+                            'avatar' => $comment->user?->profile?->avatar,
+                        ],
+                    ];
+                });
+            }),
+
+            'reactions' => $this->whenLoaded('reactions', function () {
+                return $this->reactions->map(function ($reaction) {
+                    return [
+                        'id' => $reaction->id,
+                        'type' => $reaction->type,
+                        'user_id' => $reaction->user_id,
+                        'stream_id' => $reaction->stream_id,
+                        'created_at' => $reaction->created_at,
+                        'user' => [
+                            'id' => $reaction->user?->id,
+                            'name' => $reaction->user?->name,
+                            'email' => $reaction->user?->email,
+                            'avatar' => $reaction->user?->profile?->avatar,
+                        ],
                     ];
                 });
             }),

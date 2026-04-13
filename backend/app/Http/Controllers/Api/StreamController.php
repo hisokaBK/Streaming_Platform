@@ -13,28 +13,58 @@ use App\Http\Requests\Stream\UpdateStreamRequest;
 
 class StreamController extends Controller
 {
-    public function index()
+    public function index(): JsonResponse
     {
-        $streams = Stream::with(['user.profile', 'categories'])
+        $streams = Stream::with([
+                'user.profile',
+                'categories',
+                'reactions.user.profile',
+            ])
             ->withCount(['comments', 'reactions'])
             ->latest()
             ->paginate(10);
 
-        return StreamResource::collection($streams);
+        if ($streams->isEmpty()) {
+            return response()->json([
+                'message' => 'No streams found.',
+                'data' => [],
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => 'Streams retrieved successfully.',
+            'data' => StreamResource::collection($streams),
+            'meta' => [
+                'current_page' => $streams->currentPage(),
+                'last_page' => $streams->lastPage(),
+                'per_page' => $streams->perPage(),
+                'total' => $streams->total(),
+            ],
+        ]);
     }
 
-    public function show(Stream $stream): JsonResponse
+    public function show($id): JsonResponse
     {
-        $stream->load([
-            'user.profile',
-            'categories',
-            'comments.user.profile',
-        ])->loadCount([
-            'comments',
-            'reactions',
-        ]);
+        $stream = Stream::with([
+                'user.profile',
+                'categories',
+                'comments.user.profile',
+                'reactions.user.profile',
+            ])
+            ->withCount([
+                'comments',
+                'reactions',
+            ])
+            ->find($id);
+    
+        if (!$stream) {
+            return response()->json([
+                'message' => 'Stream not found.',
+            ], 404);
+        }
     
         return response()->json([
+            'message' => 'Stream retrieved successfully.',
             'data' => new StreamResource($stream),
         ]);
     }

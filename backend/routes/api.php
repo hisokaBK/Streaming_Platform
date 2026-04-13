@@ -44,7 +44,6 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
 });
 
-
 Route::prefix('stream')->group(function () {
     Route::get('/streams', [StreamController::class, 'index']);
     Route::get('/streams/{stream}', [StreamController::class, 'show']);
