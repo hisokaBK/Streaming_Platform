@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         'comment.owner' => \App\Http\Middleware\EnsureCommentOwner::class,
         'profile.owner' => \App\Http\Middleware\EnsureProfileOwner::class,
         'stream.status.live' => \App\Http\Middleware\EnsureUserHasNoLiveStream::class,
+        'user.banned' => \App\Http\Middleware\EnsureUserIsNotBanned::class,
 
         ]);
     })

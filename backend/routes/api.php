@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\ReactionController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\Admin\StatisticController;
+
 
 
 
@@ -22,13 +24,13 @@ Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('auth:sanctum','user.banned')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
     });
 });
 
 
-Route::prefix('/profile')->middleware('auth:sanctum')->group(function () {
+Route::prefix('/profile')->middleware('auth:sanctum','user.banned')->group(function () {
     Route::get('/profile', [ProfileController::class, 'showMyProfile']);
     Route::get('/profile/{user}', [ProfileController::class, 'show']);
 
@@ -38,19 +40,11 @@ Route::prefix('/profile')->middleware('auth:sanctum')->group(function () {
 });
 
 
-Route::middleware(['auth:sanctum', 'admin'])->group(function () {
-
-    Route::post('/categories', [CategoryController::class, 'store']);
-    Route::put('/categories/{category}', [CategoryController::class, 'update']);
-    Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
-
-});
-
 Route::prefix('stream')->group(function () {
     Route::get('/streams', [StreamController::class, 'index']);
     Route::get('/streams/{stream}', [StreamController::class, 'show']);
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('auth:sanctum','user.banned')->group(function () {
         Route::middleware('stream.status.live')->group(function () {
             Route::post('/streams', [StreamController::class, 'store']);
         });
@@ -68,7 +62,7 @@ Route::prefix('video')->group(function () {
     Route::get('/videos', [VideoController::class, 'index']);
     Route::get('/videos/{video}', [VideoController::class, 'show']);
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('auth:sanctum','user.banned')->group(function () {
 
         Route::post('/videos', [VideoController::class, 'store']);
 
@@ -83,20 +77,20 @@ Route::prefix('subscrip')->group(function () {
     Route::get('/users/{user}/followers', [SubscriptionController::class, 'followers']);
     Route::get('/users/{user}/following', [SubscriptionController::class, 'following']);
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('auth:sanctum','user.banned')->group(function () {
         Route::post('/subscriptions/follow', [SubscriptionController::class, 'follow']);
         Route::delete('/subscriptions/{user}/unfollow', [SubscriptionController::class, 'unfollow']);
     });
 });
 
 Route::prefix('reaction')->group(function () {
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('auth:sanctum','user.banned')->group(function () {
         Route::post('/reactions', [ReactionController::class, 'store']);
     });
 });
 
 Route::prefix('messages')->group(function () {
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('auth:sanctum','user.banned')->group(function () {
         Route::post('/messages', [MessageController::class, 'store']);
         Route::get('/conversations', [MessageController::class, 'conversations']);
         Route::get('/messages/{user}', [MessageController::class, 'messages']);
@@ -104,8 +98,21 @@ Route::prefix('messages')->group(function () {
     });
 });
 
-Route::prefix('notification')->middleware('auth:sanctum')->group(function () {
+Route::prefix('notification')->middleware('auth:sanctum','user.banned')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
     Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+});
+
+
+Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function () {
+    Route::get('/statistics', [StatisticController::class, 'dashboard']);
+});
+
+Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+
+    Route::post('/categories', [CategoryController::class, 'store']);
+    Route::put('/categories/{category}', [CategoryController::class, 'update']);
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
+
 });
