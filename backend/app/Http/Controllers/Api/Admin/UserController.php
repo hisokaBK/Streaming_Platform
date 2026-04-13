@@ -47,5 +47,23 @@ class UserController extends Controller
         ]);
     }
 
+    public function unban(User $user): JsonResponse
+    {
+        if (!$user->is_banned) {
+            return response()->json([
+                'message' => 'User is not banned.',
+            ], 422);
+        }
 
+        $user->update([
+            'is_banned' => false,
+        ]);
+
+        $user->load('profile');
+
+        return response()->json([
+            'message' => 'User unbanned successfully.',
+            'data' => new UserResource($user),
+        ]);
+    }
 }
