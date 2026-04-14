@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Video;
-use App\Models\Stream;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\VideoResource;
 use App\Http\Requests\Video\StoreVideoRequest;
+
+use App\Models\Video;
+use App\Models\Stream;
+use App\Models\Category;
+
 
 class VideoController extends Controller
 {
@@ -150,18 +153,18 @@ class VideoController extends Controller
             })
             ->latest()
             ->paginate(10);
-    
+
         $videos->getCollection()->each(function ($video) {
             $video->stream?->loadCount('reactions');
         });
-    
+
         if ($videos->isEmpty()) {
             return response()->json([
                 'message' => 'No videos found for this category.',
                 'data' => [],
             ], 200);
         }
-    
+
         return response()->json([
             'message' => 'Videos filtered by category successfully.',
             'data' => VideoResource::collection($videos),

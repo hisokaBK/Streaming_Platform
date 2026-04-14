@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Stream;
-use App\Models\Subscription;
-use App\Models\Notification;
+
 use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
@@ -12,6 +10,11 @@ use App\Http\Resources\StreamResource;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\Stream\StoreStreamRequest;
 use App\Http\Requests\Stream\UpdateStreamRequest;
+
+use App\Models\Stream;
+use App\Models\Subscription;
+use App\Models\Notification;
+use App\Models\Category;
 
 class StreamController extends Controller
 {
@@ -195,14 +198,14 @@ class StreamController extends Controller
             })
             ->latest()
             ->paginate(10);
-    
+
         if ($streams->isEmpty()) {
             return response()->json([
                 'message' => 'No streams found for this category.',
                 'data' => [],
             ], 200);
         }
-    
+
         return response()->json([
             'message' => 'Streams filtered by category successfully.',
             'data' => StreamResource::collection($streams),

@@ -9,7 +9,7 @@ class VideoResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $reactionTypes = ['like', 'love', 'haha', 'wow', 'sad', 'angry', 'clap'];
+        $reactionTypes = ['like', 'love', 'haha', 'wow', 'sad', 'angry', 'clap','fire'];
 
         $reactionsSummary = collect($reactionTypes)->mapWithKeys(function ($type) {
             return [

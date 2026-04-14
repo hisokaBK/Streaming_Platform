@@ -15,7 +15,6 @@ use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\CategoryController;
 
 
-
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -110,11 +109,11 @@ Route::prefix('notification')->middleware(['auth:sanctum','user.banned'])->group
 });
 
 
-Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/categories', [CategoryController::class, 'index']);
 
-    Route::middleware('admin')->group(function (){
+    Route::prefix('admin')->middleware('admin')->group(function (){
 
         Route::get('/statistics', [StatisticController::class, 'dashboard']);
 
