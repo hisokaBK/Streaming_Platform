@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Stream;
+use App\Models\Subscription;
+use App\Models\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
@@ -80,7 +82,7 @@ class StreamController extends Controller
                 'description' => $request->description,
                 'status' => $status,
                 'stream_key' => Str::random(32),
-                'started_at' => no2w(),
+                'started_at' => now(),
                 'ended_at' => null,
             ]);
 
@@ -177,6 +179,39 @@ class StreamController extends Controller
         return response()->json([
             'message' => 'Stream ended successfully.',
             'data' => new StreamResource($stream),
+        ]);
+    }
+
+    public function filterByCategory(Category $category): JsonResponse
+    {
+        $streams = Stream::with([
+                'user.profile',
+                'categories',
+                'reactions.user.profile',
+            ])
+            ->withCount(['comments', 'reactions'])
+            ->whereHas('categories', function ($query) use ($category) {
+                $query->where('categories.id', $category->id);
+            })
+            ->latest()
+            ->paginate(10);
+    
+        if ($streams->isEmpty()) {
+            return response()->json([
+                'message' => 'No streams found for this category.',
+                'data' => [],
+            ], 200);
+        }
+    
+        return response()->json([
+            'message' => 'Streams filtered by category successfully.',
+            'data' => StreamResource::collection($streams),
+            'meta' => [
+                'current_page' => $streams->currentPage(),
+                'last_page' => $streams->lastPage(),
+                'per_page' => $streams->perPage(),
+                'total' => $streams->total(),
+            ],
         ]);
     }
 

@@ -57,15 +57,15 @@ class VideoController extends Controller
             ])
             ->withCount('comments')
             ->find($id);
-    
+
         if (!$video) {
             return response()->json([
                 'message' => 'Video not found.',
             ], 404);
         }
-    
+
         $video->stream?->loadCount('reactions');
-    
+
         return response()->json([
             'message' => 'Video retrieved successfully.',
             'data' => new VideoResource($video),

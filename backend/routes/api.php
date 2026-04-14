@@ -15,8 +15,6 @@ use App\Http\Controllers\Api\Admin\UserController;
 
 
 
-
-
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -42,13 +40,26 @@ Route::prefix('/profile')->middleware('auth:sanctum','user.banned')->group(funct
 });
 
 
+Route::prefix('subscrip')->group(function () {
+    Route::get('/users/{user}/followers', [SubscriptionController::class, 'followers']);
+    Route::get('/users/{user}/following', [SubscriptionController::class, 'following']);
+
+    Route::middleware('auth:sanctum','user.banned')->group(function () {
+        Route::post('/subscriptions/follow', [SubscriptionController::class, 'follow']);
+        Route::delete('/subscriptions/{user}/unfollow', [SubscriptionController::class, 'unfollow']);
+    });
+});
+
+
 Route::prefix('stream')->group(function () {
     Route::get('/streams', [StreamController::class, 'index']);
     Route::get('/streams/{stream}', [StreamController::class, 'show']);
+    Route::get('/streams/category/{category}', [StreamController::class, 'filterByCategory']);
 
     Route::middleware('auth:sanctum','user.banned')->group(function () {
+
         Route::middleware('stream.status.live')->group(function () {
-            Route::post('/streams', [StreamController::class, 'store']);
+              Route::post('/streams', [StreamController::class, 'store']);
         });
 
         Route::middleware('stream.owner')->group(function () {
@@ -75,16 +86,6 @@ Route::prefix('video')->group(function () {
 });
 
 
-Route::prefix('subscrip')->group(function () {
-    Route::get('/users/{user}/followers', [SubscriptionController::class, 'followers']);
-    Route::get('/users/{user}/following', [SubscriptionController::class, 'following']);
-
-    Route::middleware('auth:sanctum','user.banned')->group(function () {
-        Route::post('/subscriptions/follow', [SubscriptionController::class, 'follow']);
-        Route::delete('/subscriptions/{user}/unfollow', [SubscriptionController::class, 'unfollow']);
-    });
-});
-
 Route::prefix('reaction')->group(function () {
     Route::middleware('auth:sanctum','user.banned')->group(function () {
         Route::post('/reactions', [ReactionController::class, 'store']);
@@ -110,7 +111,7 @@ Route::prefix('notification')->middleware('auth:sanctum','user.banned')->group(f
 Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function () {
 
     Route::get('/statistics', [StatisticController::class, 'dashboard']);
-    
+
     Route::get('/users', [UserController::class, 'index']);
     Route::patch('/users/{user}/ban', [UserController::class, 'ban']);
     Route::patch('/users/{user}/unban', [UserController::class, 'unban']);
