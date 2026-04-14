@@ -136,4 +136,41 @@ class VideoController extends Controller
             'message' => 'Video deleted successfully.',
         ]);
     }
+
+    public function filterByCategory(Category $category): JsonResponse
+    {
+        $videos = Video::with([
+                'user.profile',
+                'stream.reactions.user.profile',
+                'categories',
+            ])
+            ->withCount(['comments'])
+            ->whereHas('categories', function ($query) use ($category) {
+                $query->where('categories.id', $category->id);
+            })
+            ->latest()
+            ->paginate(10);
+    
+        $videos->getCollection()->each(function ($video) {
+            $video->stream?->loadCount('reactions');
+        });
+    
+        if ($videos->isEmpty()) {
+            return response()->json([
+                'message' => 'No videos found for this category.',
+                'data' => [],
+            ], 200);
+        }
+    
+        return response()->json([
+            'message' => 'Videos filtered by category successfully.',
+            'data' => VideoResource::collection($videos),
+            'meta' => [
+                'current_page' => $videos->currentPage(),
+                'last_page' => $videos->lastPage(),
+                'per_page' => $videos->perPage(),
+                'total' => $videos->total(),
+            ],
+        ]);
+    }
 }
