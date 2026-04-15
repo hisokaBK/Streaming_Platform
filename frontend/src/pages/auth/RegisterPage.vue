@@ -69,7 +69,7 @@
 
               <div>
                 <label for="password_confirmation" class="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">
-                  Confirm
+                  Confirm Password
                 </label>
                 <input
                   id="password_confirmation"
@@ -80,6 +80,10 @@
                 />
               </div>
             </div>
+
+            <p v-if="successMessage" class="text-sm text-green-400">
+              {{ successMessage }}
+            </p>
 
             <p v-if="generalError" class="text-sm text-red-400">
               {{ generalError }}
@@ -124,6 +128,7 @@ const router = useRouter()
 
 const loading = ref(false)
 const generalError = ref('')
+const successMessage = ref('')
 const errors = ref({})
 
 const form = reactive({
@@ -133,27 +138,29 @@ const form = reactive({
   password_confirmation: '',
 })
 
+const resetForm = () => {
+  form.name = ''
+  form.email = ''
+  form.password = ''
+  form.password_confirmation = ''
+}
+
 const handleRegister = async () => {
   loading.value = true
   generalError.value = ''
+  successMessage.value = ''
   errors.value = {}
 
   try {
-    const response = await api.post('/register', form)
+    const response = await api.post('/auth/register', form)
 
-    const token = response.data.token
-    const user = response.data.user
+    successMessage.value = response.data.message || 'Register successful'
 
-    if (token) {
-      localStorage.setItem('token', token)
-      api.defaults.headers.common.Authorization = `Bearer ${token}`
-    }
+    resetForm()
 
-    if (user) {
-      localStorage.setItem('user', JSON.stringify(user))
-    }
-
-    router.push('/profile')
+    setTimeout(() => {
+      router.push('/login')
+    }, 1000)
   } catch (error) {
     if (error.response?.status === 422) {
       errors.value = error.response.data.errors || {}
