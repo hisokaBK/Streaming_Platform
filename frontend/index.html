@@ -1,12 +1,113 @@
 <!doctype html>
-<html lang="en">
+<html class="dark" lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>app</title>
+    <title>Streaming Platform</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap"
+    />
+
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              'surface-tint': '#f680ff',
+              'on-primary': '#550060',
+              'surface-dim': '#0e0e0e',
+              'inverse-on-surface': '#555555',
+              'on-error': '#490013',
+              'tertiary-dim': '#ff67ad',
+              'on-tertiary-fixed': '#37001d',
+              'primary-dim': '#f060ff',
+              'secondary-fixed-dim': '#dbb4ff',
+              'secondary-container': '#6f00be',
+              'on-tertiary-fixed-variant': '#740044',
+              'on-primary-container': '#42004a',
+              'error-container': '#a70138',
+              'error-dim': '#d73357',
+              'on-surface': '#ffffff',
+              'secondary-fixed': '#e5c6ff',
+              'on-secondary-container': '#e9cdff',
+              'primary-container': '#f165ff',
+              'on-tertiary-container': '#2f0018',
+              'inverse-surface': '#f9f9f9',
+              'on-secondary-fixed-variant': '#7511c3',
+              'surface-variant': '#262626',
+              'on-secondary': '#33005b',
+              'background': '#0e0e0e',
+              'surface-container-low': '#131313',
+              'surface': '#0e0e0e',
+              'surface-container-lowest': '#000000',
+              'tertiary': '#ff6daf',
+              'primary': '#f680ff',
+              'outline': '#757575',
+              'secondary-dim': '#9c48ea',
+              'inverse-primary': '#a500b8',
+              'primary-fixed': '#f165ff',
+              'primary-fixed-dim': '#e650f7',
+              'on-background': '#ffffff',
+              'tertiary-container': '#fa53a4',
+              'on-primary-fixed-variant': '#51005b',
+              'surface-bright': '#2c2c2c',
+              'on-surface-variant': '#ababab',
+              'tertiary-fixed-dim': '#ff73b1',
+              'on-tertiary': '#4b002a',
+              'error': '#ff6e84',
+              'secondary': '#c180ff',
+              'surface-container-high': '#1f1f1f',
+              'surface-container': '#191919',
+              'on-error-container': '#ffb2b9',
+              'on-primary-fixed': '#000000',
+              'outline-variant': '#484848',
+              'surface-container-highest': '#262626',
+              'tertiary-fixed': '#ff8cbc',
+              'on-secondary-fixed': '#4f0089',
+            },
+            borderRadius: {
+              DEFAULT: '1rem',
+              lg: '2rem',
+              xl: '3rem',
+              full: '9999px',
+            },
+            fontFamily: {
+              headline: ['Manrope', 'sans-serif'],
+              body: ['Inter', 'sans-serif'],
+              label: ['Inter', 'sans-serif'],
+            },
+          },
+        },
+      }
+    </script>
+
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24;
+      }
+
+      body {
+        margin: 0;
+        background-color: #000000;
+        font-family: 'Inter', sans-serif;
+      }
+    </style>
   </head>
-  <body>
+
+  <body class="bg-black font-body text-on-surface">
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
   </body>
