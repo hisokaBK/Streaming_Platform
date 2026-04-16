@@ -208,7 +208,7 @@
       </main>
 
       <footer class="absolute bottom-0 left-0 z-30 flex w-full justify-center px-8 py-6 font-label text-[10px] uppercase tracking-[0.2em] text-outline">
-        © 2024 Hisoka Noir Entertainment. All Rights Reserved.
+        © 2026 Hisoka Noir Entertainment. All Rights Reserved.
       </footer>
     </div>
   </div>
