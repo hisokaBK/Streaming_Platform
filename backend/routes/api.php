@@ -13,6 +13,8 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\Admin\StatisticController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CommentController;
+
 
 
 
@@ -86,6 +88,14 @@ Route::prefix('video')->group(function () {
 Route::prefix('reaction')->group(function () {
     Route::middleware(['auth:sanctum','user.banned'])->group(function () {
         Route::post('/reactions', [ReactionController::class, 'store']);
+    });
+});
+
+Route::prefix('comments')->group(function () {
+    Route::middleware(['auth:sanctum', 'user.banned'])->group(function () {
+        Route::post('/', [CommentController::class, 'store']);
+        Route::put('/{comment}', [CommentController::class, 'update']);
+        Route::delete('/{comment}', [CommentController::class, 'destroy']);
     });
 });
 

@@ -16,7 +16,7 @@ class StoreReactionRequest extends FormRequest
     {
         return [
             'stream_id' => ['required', 'integer', 'exists:streams,id'],
-            'type' => ['required', 'string', Rule::in(['like', 'love', 'haha', 'wow', 'sad', 'angry'])],
+            'type' => ['required', 'string', Rule::in(['like', 'love', 'haha', 'wow', 'sad', 'angry','clap','fire'])],
         ];
     }
 }
