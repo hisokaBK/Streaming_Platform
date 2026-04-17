@@ -331,7 +331,7 @@ const buildStorageUrl = (path) => {
 const coverImage = computed(() => {
   return profile.value?.background_image
     ? buildStorageUrl(profile.value.background_image)
-    : 'src/assets/background.png'
+    : '../src/assets/background.png'
 })
 
 const avatarImage = computed(() => {
