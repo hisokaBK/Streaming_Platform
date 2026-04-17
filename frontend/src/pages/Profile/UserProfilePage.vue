@@ -331,7 +331,7 @@ const buildStorageUrl = (path) => {
 const coverImage = computed(() => {
   return profile.value?.background_image
     ? buildStorageUrl(profile.value.background_image)
-    : 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop'
+    : 'src/assets/background.png'
 })
 
 const avatarImage = computed(() => {

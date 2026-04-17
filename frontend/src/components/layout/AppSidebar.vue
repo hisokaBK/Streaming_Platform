@@ -31,13 +31,6 @@
     </div>
 
     <div class="space-y-2 border-t border-white/5 px-3 py-4">
-      <RouterLink
-        to="/settings"
-        class="flex items-center rounded-xl px-4 py-3 text-sm text-zinc-500 transition-all duration-200 hover:bg-white/5 hover:text-zinc-100"
-      >
-        <span class="material-symbols-outlined shrink-0">settings</span>
-        <span v-if="!collapsed" class="ml-3">Settings</span>
-      </RouterLink>
 
       <button
         type="button"
