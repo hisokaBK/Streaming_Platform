@@ -50,28 +50,34 @@
       </RouterLink>
 
       <RouterLink to="/profile" class="block">
-        <img
-          :src="avatarUrl"
-          alt="User profile avatar"
-          class="h-10 w-10 rounded-full border-2 border-primary/30 object-cover object-center"
-        />
+        <template v-if="avatarUrl">
+          <img
+            :src="avatarUrl"
+            alt="Authenticated user avatar"
+            class="h-10 w-10 rounded-full border-2 border-primary/30 object-cover object-center"
+          />
+        </template>
+
+        <template v-else>
+          <div
+            class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary/30 bg-zinc-900 text-sm font-bold uppercase text-white"
+          >
+            {{ userInitials }}
+          </div>
+        </template>
       </RouterLink>
     </div>
   </nav>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-
-const props = defineProps({
-  profile: {
-    type: Object,
-    default: null,
-  },
-})
+import api from '@/services/api'
 
 defineEmits(['toggle-sidebar'])
+
+const authProfile = ref(null)
 
 const buildStorageUrl = (path) => {
   if (!path) return null
@@ -81,13 +87,48 @@ const buildStorageUrl = (path) => {
 }
 
 const avatarUrl = computed(() => {
-  const avatar = props.profile?.avatar
+  const avatar = authProfile.value?.avatar
 
   if (avatar) {
     return buildStorageUrl(avatar)
   }
 
-  const name = props.profile?.user?.name || 'User'
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=111111&color=ffffff&size=256`
+  return null
+})
+
+const userInitials = computed(() => {
+  const name = authProfile.value?.user?.name || 'User'
+
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
+})
+
+const loadAuthProfile = async () => {
+  try {
+    const response = await api.get('/profile/profile')
+    authProfile.value = response.data?.data?.profile || null
+  } catch (error) {
+    console.error('Failed to load authenticated profile for navbar', error)
+    authProfile.value = null
+  }
+}
+
+onMounted(() => {
+  loadAuthProfile()
 })
 </script>
+
+<style scoped>
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+</style>
