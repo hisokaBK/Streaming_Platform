@@ -7,6 +7,7 @@ use App\Models\Subscription;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Subscription\StoreSubscriptionRequest;
+use App\Http\Resources\SubscriptionUserResource;
 
 class SubscriptionController extends Controller
 {
@@ -59,41 +60,39 @@ class SubscriptionController extends Controller
 
     public function followers(User $user): JsonResponse
     {
-        $followers = Subscription::with('subscriber')
+        $followers = Subscription::with('subscriber.profile')
             ->where('streamer_id', $user->id)
             ->latest()
             ->paginate(10);
 
-        $data = $followers->through(function ($subscription) {
-            return [
-                'subscription_id' => $subscription->id,
-                'id' => $subscription->subscriber?->id,
-                'name' => $subscription->subscriber?->name,
-                'email' => $subscription->subscriber?->email,
-                'followed_at' => $subscription->created_at,
-            ];
-        });
-
-        return response()->json($data);
+        return response()->json([
+            'message' => 'Followers retrieved successfully.',
+            'data' => FollowUserResource::collection($followers),
+            'meta' => [
+                'current_page' => $followers->currentPage(),
+                'last_page' => $followers->lastPage(),
+                'per_page' => $followers->perPage(),
+                'total' => $followers->total(),
+            ],
+        ]);
     }
 
     public function following(User $user): JsonResponse
     {
-        $following = Subscription::with('streamer')
+        $following = Subscription::with('streamer.profile')
             ->where('subscriber_id', $user->id)
             ->latest()
             ->paginate(10);
 
-        $data = $following->through(function ($subscription) {
-            return [
-                'subscription_id' => $subscription->id,
-                'id' => $subscription->streamer?->id,
-                'name' => $subscription->streamer?->name,
-                'email' => $subscription->streamer?->email,
-                'followed_at' => $subscription->created_at,
-            ];
-        });
-
-        return response()->json($data);
+        return response()->json([
+            'message' => 'Following retrieved successfully.',
+            'data' => FollowUserResource::collection($following),
+            'meta' => [
+                'current_page' => $following->currentPage(),
+                'last_page' => $following->lastPage(),
+                'per_page' => $following->perPage(),
+                'total' => $following->total(),
+            ],
+        ]);
     }
 }

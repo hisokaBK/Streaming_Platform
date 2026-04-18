@@ -134,9 +134,12 @@
                       </p>
                     </div>
 
-                    <p v-if="generalError" class="text-sm text-error">
+                    <div
+                      v-if="generalError"
+                      class="rounded-2xl border border-error/20 bg-error/10 px-4 py-3 text-sm text-error"
+                    >
                       {{ generalError }}
-                    </p>
+                    </div>
 
                     <p v-if="successMessage" class="text-sm text-green-400">
                       {{ successMessage }}
@@ -320,7 +323,10 @@ const handleCreateStream = async () => {
     }
   } catch (error) {
     if (error.response?.status === 422) {
-      errors.value = error.response.data.errors || {}
+      errors.value = error.response?.data?.errors || {}
+      generalError.value =
+        error.response?.data?.message ||
+        'Unable to create stream. Please check your input.'
     } else {
       generalError.value =
         error.response?.data?.message || 'Failed to create stream.'

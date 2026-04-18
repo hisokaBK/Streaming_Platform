@@ -118,13 +118,13 @@ Route::prefix('notification')->middleware(['auth:sanctum','user.banned'])->group
 
 Route::middleware('auth:sanctum')->group(function () {
 
+    Route::get('/users', [UserController::class, 'index']);
     Route::get('/categories', [CategoryController::class, 'index']);
 
     Route::prefix('admin')->middleware('admin')->group(function (){
 
         Route::get('/statistics', [StatisticController::class, 'dashboard']);
 
-        Route::get('/users', [UserController::class, 'index']);
         Route::patch('/users/{user}/ban', [UserController::class, 'ban']);
         Route::patch('/users/{user}/unban', [UserController::class, 'unban']);
 
