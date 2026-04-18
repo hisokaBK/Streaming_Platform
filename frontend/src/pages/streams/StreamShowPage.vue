@@ -8,7 +8,7 @@
 
         <main
           :class="[
-            'flex min-h-screen flex-1 flex-col pt-20 transition-all duration-300',
+            'flex min-h-screen flex-1 flex-col pt-0 transition-all duration-300',
             sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
           ]"
         >
