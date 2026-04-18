@@ -80,4 +80,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Notification::class);
     }
+    
+    public function sentNotifications()
+    {
+        return $this->hasMany(Notification::class, 'actor_user_id');
+    }
 }

@@ -11,7 +11,11 @@ class NotificationController extends Controller
 {
     public function index(): JsonResponse
     {
-        $notifications = Notification::where('user_id', auth()->id())
+        $notifications = Notification::with([
+                'actor.profile',
+                'stream',
+            ])
+            ->where('user_id', auth()->id())
             ->latest()
             ->paginate(10);
 
@@ -37,6 +41,11 @@ class NotificationController extends Controller
 
         $notification->update([
             'is_read' => true,
+        ]);
+
+        $notification->load([
+            'actor.profile',
+            'stream',
         ]);
 
         return response()->json([

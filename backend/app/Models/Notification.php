@@ -11,6 +11,9 @@ class Notification extends Model
 
     protected $fillable = [
         'user_id',
+        'type',
+        'actor_user_id',
+        'stream_id',
         'content',
         'is_read',
     ];
@@ -22,5 +25,15 @@ class Notification extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function actor()
+    {
+        return $this->belongsTo(User::class, 'actor_user_id');
+    }
+
+    public function stream()
+    {
+        return $this->belongsTo(Stream::class);
     }
 }

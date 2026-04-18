@@ -98,11 +98,14 @@ class StreamController extends Controller
                     ->pluck('subscriber_id');
 
                 foreach ($followerIds as $followerId) {
-                    Notification::create([
-                        'user_id' => $followerId,
-                        'content' => auth()->user()->name . ' started a new live stream: ' . $stream->title,
-                        'is_read' => false,
-                    ]);
+                   Notification::create([
+                       'user_id' => $followerId,
+                       'type' => 'stream_live',
+                       'actor_user_id' => auth()->id(),
+                       'stream_id' => $stream->id,
+                       'content' => auth()->user()->name . ' started a new live stream: ' . $stream->title,
+                       'is_read' => false,
+                   ]);
                 }
             }
 
@@ -173,7 +176,7 @@ class StreamController extends Controller
             'comments',
             'reactions',
         ]);
-    
+
         return response()->json([
             'message' => 'Stream edit data retrieved successfully.',
             'data' => new StreamResource($stream),
