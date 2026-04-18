@@ -44,9 +44,14 @@
     <div class="flex items-center gap-4">
       <RouterLink
         to="/notifications"
-        class="rounded-full p-2 text-zinc-400 transition-all duration-300 hover:bg-white/10 hover:text-white active:scale-90"
+        class="relative rounded-full p-2 text-zinc-400 transition-all duration-300 hover:bg-white/10 hover:text-white active:scale-90"
       >
         <span class="material-symbols-outlined">notifications</span>
+
+        <span
+          v-if="hasUnreadNotifications"
+          class="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-black"
+        ></span>
       </RouterLink>
 
       <RouterLink to="/profile" class="block">
@@ -78,11 +83,11 @@ import api from '@/services/api'
 defineEmits(['toggle-sidebar'])
 
 const authProfile = ref(null)
+const hasUnreadNotifications = ref(false)
 
 const buildStorageUrl = (path) => {
   if (!path) return null
   if (path.startsWith('http')) return path
-
   return `http://localhost:8000/storage/${path}`
 }
 
@@ -118,8 +123,26 @@ const loadAuthProfile = async () => {
   }
 }
 
-onMounted(() => {
-  loadAuthProfile()
+const loadNotificationsState = async () => {
+  try {
+    const response = await api.get('/notification/notifications?page=1')
+
+    const notifications = response.data?.data?.data || response.data?.data || []
+
+    hasUnreadNotifications.value = notifications.some(
+      (notification) => notification.is_read === false
+    )
+  } catch (error) {
+    console.error('Failed to load notifications state for navbar', error)
+    hasUnreadNotifications.value = false
+  }
+}
+
+onMounted(async () => {
+  await Promise.all([
+    loadAuthProfile(),
+    loadNotificationsState(),
+  ])
 })
 </script>
 
