@@ -67,7 +67,7 @@ class SubscriptionController extends Controller
 
         return response()->json([
             'message' => 'Followers retrieved successfully.',
-            'data' => FollowUserResource::collection($followers),
+            'data' => SubscriptionUserResource::collection($followers),
             'meta' => [
                 'current_page' => $followers->currentPage(),
                 'last_page' => $followers->lastPage(),
@@ -86,7 +86,7 @@ class SubscriptionController extends Controller
 
         return response()->json([
             'message' => 'Following retrieved successfully.',
-            'data' => FollowUserResource::collection($following),
+            'data' => SubscriptionUserResource::collection($following),
             'meta' => [
                 'current_page' => $following->currentPage(),
                 'last_page' => $following->lastPage(),
