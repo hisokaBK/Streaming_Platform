@@ -18,12 +18,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
 
         'admin' => \App\Http\Middleware\AdminMiddleware::class,
-        'stream.owner' => \App\Http\Middleware\IsStreamOwner::class,
         'video.owner' => \App\Http\Middleware\EnsureVideoOwner::class,
         'comment.owner' => \App\Http\Middleware\EnsureCommentOwner::class,
         'profile.owner' => \App\Http\Middleware\EnsureProfileOwner::class,
         'stream.status.live' => \App\Http\Middleware\EnsureUserHasNoLiveStream::class,
         'user.banned' => \App\Http\Middleware\EnsureUserIsNotBanned::class,
+        'stream.owner.live' => \App\Http\Middleware\EnsureUserOwnsLiveStream::class,
 
         ]);
     })

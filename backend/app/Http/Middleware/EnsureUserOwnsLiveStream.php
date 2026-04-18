@@ -7,7 +7,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class IsStreamOwner
+class EnsureUserOwnsLiveStream
 {
     public function handle(Request $request, Closure $next): Response
     {
@@ -17,9 +17,21 @@ class IsStreamOwner
             $stream = Stream::findOrFail($stream);
         }
 
-        if (!$request->user() || $request->user()->id !== $stream->user_id) {
+        if (!$request->user()) {
+            return response()->json([
+                'message' => 'Unauthorized.'
+            ], 401);
+        }
+
+        if ((int) $request->user()->id !== (int) $stream->user_id) {
             return response()->json([
                 'message' => 'Unauthorized. You are not the owner of this stream.'
+            ], 403);
+        }
+
+        if ($stream->status !== 'live') {
+            return response()->json([
+                'message' => 'Only live streams can be edited.'
             ], 403);
         }
 

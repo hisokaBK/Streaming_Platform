@@ -163,6 +163,23 @@ class StreamController extends Controller
         ]);
     }
 
+    public function edit(Stream $stream): JsonResponse
+    {
+        $stream->load([
+            'user.profile',
+            'categories',
+            'reactions.user.profile',
+        ])->loadCount([
+            'comments',
+            'reactions',
+        ]);
+    
+        return response()->json([
+            'message' => 'Stream edit data retrieved successfully.',
+            'data' => new StreamResource($stream),
+        ]);
+    }
+
     public function end(Stream $stream): JsonResponse
     {
         if ($stream->status === 'ended') {

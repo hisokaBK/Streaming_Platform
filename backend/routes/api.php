@@ -60,7 +60,8 @@ Route::prefix('stream')->group(function () {
               Route::post('/streams', [StreamController::class, 'store']);
         });
 
-        Route::middleware('stream.owner')->group(function () {
+        Route::middleware('stream.owner.live')->group(function () {
+            Route::get('/streams/{stream}/edit', [StreamController::class, 'edit']);
             Route::put('/streams/{stream}', [StreamController::class, 'update']);
             Route::patch('/streams/{stream}/end', [StreamController::class, 'end']);
         });
