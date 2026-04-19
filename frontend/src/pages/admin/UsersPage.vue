@@ -189,20 +189,13 @@
 
                   <button
                     type="button"
-                    :disabled="actionLoadingId === user.id"
-                    class="rounded-full px-5 py-2 text-xs font-bold uppercase tracking-widest transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                    class="rounded-full px-5 py-2 text-xs font-bold uppercase tracking-widest transition-all active:scale-95"
                     :class="user.is_banned
                       ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
                       : 'bg-error/10 text-error hover:bg-error/20'"
-                    @click="toggleBan(user)"
+                    @click="openStatusModal(user)"
                   >
-                    {{
-                      actionLoadingId === user.id
-                        ? 'Processing...'
-                        : user.is_banned
-                          ? 'Unban User'
-                          : 'Ban User'
-                    }}
+                    {{ user.is_banned ? 'Unban User' : 'Ban User' }}
                   </button>
                 </div>
               </div>
@@ -260,6 +253,79 @@
           </div>
         </main>
       </div>
+
+      <!-- Ban / Unban Confirm Modal -->
+      <div
+        v-if="showStatusModal"
+        class="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
+        @click.self="closeStatusModal"
+      >
+        <div class="w-full max-w-lg rounded-[2rem] border border-white/10 bg-surface-container p-8 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+          <div class="mb-6 flex items-start gap-4">
+            <div
+              class="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full"
+              :class="selectedUser?.is_banned ? 'bg-green-500/10 text-green-400' : 'bg-error/10 text-error'"
+            >
+              <span
+                class="material-symbols-outlined text-3xl"
+                style="font-variation-settings: 'FILL' 1;"
+              >
+                {{ selectedUser?.is_banned ? 'verified_user' : 'block' }}
+              </span>
+            </div>
+
+            <div>
+              <h2 class="font-headline text-2xl font-bold text-white">
+                {{ selectedUser?.is_banned ? 'Unban User' : 'Ban User' }}
+              </h2>
+
+              <p class="mt-2 text-sm leading-relaxed text-on-surface-variant">
+                <template v-if="selectedUser?.is_banned">
+                  Are you sure you want to unban
+                  <span class="font-bold text-white">{{ selectedUser?.name }}</span>
+                  ? This user will be able to access the protected parts of the system again.
+                </template>
+
+                <template v-else>
+                  Are you sure you want to ban
+                  <span class="font-bold text-white">{{ selectedUser?.name }}</span>
+                  ? This user will lose access to protected actions and system areas.
+                </template>
+              </p>
+            </div>
+          </div>
+
+          <p v-if="modalErrorMessage" class="mb-4 text-sm text-error">
+            {{ modalErrorMessage }}
+          </p>
+
+          <div class="flex justify-end gap-3">
+            <button
+              type="button"
+              class="rounded-full border border-white/10 px-6 py-3 font-bold text-white transition hover:bg-white/5"
+              @click="closeStatusModal"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              :disabled="actionLoadingId === selectedUser?.id"
+              class="rounded-full px-6 py-3 font-bold text-white transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+              :class="selectedUser?.is_banned ? 'bg-green-500' : 'bg-error'"
+              @click="confirmToggleBan"
+            >
+              {{
+                actionLoadingId === selectedUser?.id
+                  ? 'Processing...'
+                  : selectedUser?.is_banned
+                    ? 'Yes, Unban'
+                    : 'Yes, Ban'
+              }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -279,6 +345,10 @@ const search = ref('')
 const actionLoadingId = ref(null)
 const errorMessage = ref('')
 const successMessage = ref('')
+const modalErrorMessage = ref('')
+
+const showStatusModal = ref(false)
+const selectedUser = ref(null)
 
 const meta = ref({
   current_page: 1,
@@ -356,6 +426,15 @@ const visiblePages = computed(() => {
   return pages
 })
 
+const resetMessages = () => {
+  errorMessage.value = ''
+  successMessage.value = ''
+}
+
+const resetModalError = () => {
+  modalErrorMessage.value = ''
+}
+
 const loadUsers = async (page = 1) => {
   loading.value = true
   errorMessage.value = ''
@@ -383,15 +462,29 @@ const loadUsers = async (page = 1) => {
   }
 }
 
-const toggleBan = async (user) => {
-  actionLoadingId.value = user.id
-  errorMessage.value = ''
-  successMessage.value = ''
+const openStatusModal = (user) => {
+  selectedUser.value = user
+  resetModalError()
+  showStatusModal.value = true
+}
+
+const closeStatusModal = () => {
+  showStatusModal.value = false
+  selectedUser.value = null
+  resetModalError()
+}
+
+const confirmToggleBan = async () => {
+  if (!selectedUser.value) return
+
+  actionLoadingId.value = selectedUser.value.id
+  resetMessages()
+  resetModalError()
 
   try {
-    const endpoint = user.is_banned
-      ? `/admin/users/${user.id}/unban`
-      : `/admin/users/${user.id}/ban`
+    const endpoint = selectedUser.value.is_banned
+      ? `/admin/users/${selectedUser.value.id}/unban`
+      : `/admin/users/${selectedUser.value.id}/ban`
 
     const response = await api.patch(endpoint)
     const updatedUser = response.data?.data || null
@@ -400,12 +493,16 @@ const toggleBan = async (user) => {
       users.value = users.value.map((item) =>
         Number(item.id) === Number(updatedUser.id) ? updatedUser : item
       )
+
+      selectedUser.value = updatedUser
     }
 
     successMessage.value = response.data?.message || 'User status updated successfully.'
+    closeStatusModal()
   } catch (error) {
     console.error('Failed to update user status', error)
-    errorMessage.value = error.response?.data?.message || 'Failed to update user status.'
+    modalErrorMessage.value =
+      error.response?.data?.message || 'Failed to update user status.'
   } finally {
     actionLoadingId.value = null
   }
