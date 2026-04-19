@@ -46,15 +46,23 @@
 
                   <div class="flex gap-3">
                     <button
+                      v-if="!isOwnProfile"
                       type="button"
-                      class="rounded-full bg-primary px-8 py-2 text-sm font-bold text-on-primary-fixed shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+                      :disabled="followLoading"
+                      class="rounded-full px-8 py-2 text-sm font-bold shadow-lg transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+                      :class="isFollowing
+                        ? 'border border-outline-variant/20 bg-surface-container-high text-white hover:bg-surface-bright'
+                        : 'bg-primary text-on-primary-fixed shadow-primary/20 hover:scale-105'"
+                      @click="toggleFollow"
                     >
-                      Follow
+                      {{ followLoading ? 'Loading...' : isFollowing ? 'Following' : 'Follow' }}
                     </button>
 
                     <button
+                      v-if="!isOwnProfile"
                       type="button"
                       class="rounded-full border border-outline-variant/20 bg-surface-container-high px-6 py-2 text-sm font-semibold text-white transition-all hover:bg-surface-bright"
+                      @click="goToMessages"
                     >
                       Message
                     </button>
@@ -68,7 +76,7 @@
             </div>
           </section>
 
-          <!-- Lower Part Like MyProfile -->
+          <!-- Lower Part -->
           <div class="mx-auto mt-20 max-w-6xl px-6">
             <div class="mb-16 flex flex-col gap-12 md:flex-row">
               <div class="flex-1 space-y-6">
@@ -82,52 +90,30 @@
                 </div>
 
                 <div class="flex gap-10">
-                  <div>
+                  <button
+                    type="button"
+                    class="text-left transition hover:opacity-80"
+                    @click="openFollowersModal"
+                  >
                     <span class="block font-headline text-2xl font-black text-white">
                       {{ profile?.user?.followers_count ?? 0 }}
                     </span>
                     <span class="font-label text-xs uppercase tracking-widest text-zinc-500">
                       Followers
                     </span>
-                  </div>
+                  </button>
 
-                  <div>
+                  <button
+                    type="button"
+                    class="text-left transition hover:opacity-80"
+                    @click="openFollowingModal"
+                  >
                     <span class="block font-headline text-2xl font-black text-white">
                       {{ profile?.user?.following_count ?? 0 }}
                     </span>
                     <span class="font-label text-xs uppercase tracking-widest text-zinc-500">
                       Following
                     </span>
-                  </div>
-                </div>
-
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <button
-                    type="button"
-                    class="rounded-2xl border border-white/10 bg-surface-container-high p-5 text-left transition hover:bg-surface-container"
-                    @click="openFollowersModal"
-                  >
-                    <div class="mb-2 flex items-center justify-between">
-                      <h3 class="font-headline text-lg font-bold">Followers</h3>
-                      <span class="material-symbols-outlined text-primary">group</span>
-                    </div>
-                    <p class="text-sm text-zinc-500">
-                      See all followers
-                    </p>
-                  </button>
-
-                  <button
-                    type="button"
-                    class="rounded-2xl border border-white/10 bg-surface-container-high p-5 text-left transition hover:bg-surface-container"
-                    @click="openFollowingModal"
-                  >
-                    <div class="mb-2 flex items-center justify-between">
-                      <h3 class="font-headline text-lg font-bold">Following</h3>
-                      <span class="material-symbols-outlined text-primary">person_add</span>
-                    </div>
-                    <p class="text-sm text-zinc-500">
-                      See all following
-                    </p>
                   </button>
                 </div>
               </div>
@@ -199,6 +185,13 @@
                       class="rounded-full border border-white/10 bg-surface-container px-4 py-3 text-sm text-on-surface outline-none"
                     >
                       <option value="all">All categories</option>
+                      <option
+                        v-for="category in videoCategories"
+                        :key="category.id"
+                        :value="String(category.id)"
+                      >
+                        {{ category.name }}
+                      </option>
                     </select>
                   </div>
                 </div>
@@ -219,6 +212,19 @@
                       <div class="absolute bottom-3 right-3 rounded bg-black/80 px-2 py-1 text-[10px] font-bold text-white">
                         {{ video.duration || '00:00' }}
                       </div>
+                    </div>
+
+                    <div
+                      v-if="video.categories?.length"
+                      class="mb-2 flex flex-wrap gap-2"
+                    >
+                      <span
+                        v-for="category in video.categories"
+                        :key="`${video.id}-${category.id}`"
+                        class="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-primary"
+                      >
+                        {{ category.name }}
+                      </span>
                     </div>
 
                     <h3 class="mb-1 font-headline text-lg font-bold transition-colors group-hover:text-primary">
@@ -295,14 +301,15 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import TopNavbar from '@/components/layout/TopNavbar.vue'
 import UsersListModal from '@/components/profile/UsersListModal.vue'
 
 const route = useRoute()
+const router = useRouter()
 
 const sidebarCollapsed = ref(false)
 
@@ -320,12 +327,43 @@ const currentPage = ref(1)
 const perPage = 4
 const selectedCategory = ref('all')
 
+const followLoading = ref(false)
+const isFollowing = ref(false)
+
 const userId = computed(() => route.params.id)
+
+const getStoredUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem('user') || 'null')
+  } catch {
+    return null
+  }
+}
+
+const authUser = ref(getStoredUser())
+
+const isOwnProfile = computed(() => {
+  return Number(authUser.value?.id) === Number(userId.value)
+})
+
+const normalizeCollection = (payload) => {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.data)) return payload.data
+  if (Array.isArray(payload?.data?.data)) return payload.data.data
+  return []
+}
 
 const buildStorageUrl = (path) => {
   if (!path) return null
   if (path.startsWith('http')) return path
   return `http://localhost:8000/storage/${path}`
+}
+
+const normalizeUsersWithAvatar = (users = []) => {
+  return users.map((user) => ({
+    ...user,
+    avatar: user?.avatar ? buildStorageUrl(user.avatar) : null,
+  }))
 }
 
 const coverImage = computed(() => {
@@ -340,6 +378,26 @@ const avatarImage = computed(() => {
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.value?.user?.name || 'User')}&background=111111&color=ffffff&size=256`
 })
 
+const videoCategories = computed(() => {
+  const videos = profile.value?.videos_preview || []
+  const categoriesMap = new Map()
+
+  videos.forEach((video) => {
+    const categories = video?.categories || []
+
+    categories.forEach((category) => {
+      if (!categoriesMap.has(Number(category.id))) {
+        categoriesMap.set(Number(category.id), {
+          id: Number(category.id),
+          name: category.name,
+        })
+      }
+    })
+  })
+
+  return Array.from(categoriesMap.values())
+})
+
 const filteredVideos = computed(() => {
   const list = profile.value?.videos_preview || []
 
@@ -347,7 +405,13 @@ const filteredVideos = computed(() => {
     return list
   }
 
-  return list
+  return list.filter((video) => {
+    const categories = video?.categories || []
+
+    return categories.some(
+      (category) => String(category.id) === String(selectedCategory.value)
+    )
+  })
 })
 
 const totalPages = computed(() => {
@@ -358,6 +422,26 @@ const paginatedVideos = computed(() => {
   const start = (currentPage.value - 1) * perPage
   return filteredVideos.value.slice(start, start + perPage)
 })
+
+watch(selectedCategory, () => {
+  currentPage.value = 1
+})
+
+watch(totalPages, (value) => {
+  if (currentPage.value > value) {
+    currentPage.value = value
+  }
+})
+
+watch(
+  () => route.params.id,
+  async () => {
+    currentPage.value = 1
+    selectedCategory.value = 'all'
+    await loadProfile()
+    await loadFollowState()
+  }
+)
 
 const formatDate = (date) => {
   if (!date) return 'Unknown date'
@@ -372,9 +456,61 @@ const loadProfile = async () => {
     profile.value = response.data?.data?.profile || null
   } catch (error) {
     console.error('Failed to load user profile', error)
+    profile.value = null
   } finally {
     loading.value = false
   }
+}
+
+const loadFollowState = async () => {
+  if (!authUser.value?.id || isOwnProfile.value) {
+    isFollowing.value = false
+    return
+  }
+
+  try {
+    const response = await api.get(`/subscrip/users/${authUser.value.id}/following`)
+    const followingList = normalizeCollection(response.data)
+    isFollowing.value = followingList.some(
+      (user) => Number(user.id) === Number(userId.value)
+    )
+  } catch (error) {
+    console.error('Failed to load follow state', error)
+    isFollowing.value = false
+  }
+}
+
+const toggleFollow = async () => {
+  if (isOwnProfile.value || followLoading.value) return
+
+  followLoading.value = true
+
+  try {
+    if (isFollowing.value) {
+      await api.delete(`/subscrip/subscriptions/${userId.value}/unfollow`)
+      isFollowing.value = false
+
+      if (profile.value?.user?.followers_count > 0) {
+        profile.value.user.followers_count -= 1
+      }
+    } else {
+      await api.post('/subscrip/subscriptions/follow', {
+        streamer_id: Number(userId.value),
+      })
+      isFollowing.value = true
+      profile.value.user.followers_count =
+        (profile.value?.user?.followers_count ?? 0) + 1
+    }
+  } catch (error) {
+    console.error('Failed to toggle follow state', error)
+  } finally {
+    followLoading.value = false
+  }
+}
+
+const goToMessages = () => {
+  if (isOwnProfile.value) return
+  router.push(`/messages?user=${userId.value}`)
 }
 
 const openFollowersModal = async () => {
@@ -383,7 +519,7 @@ const openFollowersModal = async () => {
 
   try {
     const response = await api.get(`/subscrip/users/${userId.value}/followers`)
-    followersUsers.value = response.data?.data?.followers || response.data?.data || []
+    followersUsers.value = normalizeUsersWithAvatar(normalizeCollection(response.data))
   } catch (error) {
     followersUsers.value = []
     console.error('Failed to load followers', error)
@@ -398,7 +534,7 @@ const openFollowingModal = async () => {
 
   try {
     const response = await api.get(`/subscrip/users/${userId.value}/following`)
-    followingUsers.value = response.data?.data?.following || response.data?.data || []
+    followingUsers.value = normalizeUsersWithAvatar(normalizeCollection(response.data))
   } catch (error) {
     followingUsers.value = []
     console.error('Failed to load following', error)
@@ -407,8 +543,9 @@ const openFollowingModal = async () => {
   }
 }
 
-onMounted(() => {
-  loadProfile()
+onMounted(async () => {
+  await loadProfile()
+  await loadFollowState()
 })
 </script>
 
