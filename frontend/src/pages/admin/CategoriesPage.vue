@@ -1,14 +1,18 @@
 <template>
   <div class="dark">
     <div class="min-h-screen bg-background text-on-background antialiased selection:bg-primary selection:text-on-primary">
-      <TopNavbar @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed" />
+      <TopNavbar @toggle-sidebar="handleSidebarToggle" />
 
-      <div class="flex min-h-screen">
-        <AdminSidebar :collapsed="sidebarCollapsed" />
+      <div class="flex min-h-screen pt-[72px]">
+        <AdminSidebar
+          :collapsed="sidebarCollapsed"
+          :mobile-open="mobileSidebarOpen"
+          @close="mobileSidebarOpen = false"
+        />
 
         <main
           :class="[
-            'min-h-screen flex-1 p-8 transition-all duration-300',
+            'min-w-0 min-h-screen flex-1 px-4 py-6 transition-all duration-300 sm:px-6 lg:px-8',
             sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
           ]"
         >
@@ -16,17 +20,17 @@
             <div class="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-primary/10 blur-[120px]"></div>
 
             <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <h1 class="mb-2 font-headline text-4xl font-extrabold tracking-tighter text-on-surface md:text-5xl">
+              <div class="min-w-0">
+                <h1 class="mb-2 font-headline text-3xl font-extrabold tracking-tighter text-on-surface sm:text-4xl md:text-5xl">
                   Categories Management
                 </h1>
-                <p class="max-w-2xl text-lg text-on-surface-variant">
+                <p class="max-w-2xl text-base text-on-surface-variant sm:text-lg">
                   Create, update, and organize platform categories used across streams and videos.
                 </p>
               </div>
 
-              <div class="flex flex-col gap-3 sm:flex-row">
-                <div class="flex w-full min-w-[280px] items-center rounded-full border border-white/10 bg-surface-container px-4 py-3">
+              <div class="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+                <div class="flex w-full min-w-0 items-center rounded-full border border-white/10 bg-surface-container px-4 py-3 sm:min-w-[280px]">
                   <span class="material-symbols-outlined mr-3 text-on-surface-variant">search</span>
                   <input
                     v-model="search"
@@ -68,10 +72,10 @@
           </div>
 
           <div class="overflow-hidden rounded-3xl border border-white/5 bg-surface-container shadow-xl">
-            <div class="border-b border-white/5 px-6 py-5">
-              <div class="flex items-center justify-between gap-4">
+            <div class="border-b border-white/5 px-4 py-5 sm:px-6">
+              <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 class="font-headline text-2xl font-bold text-white">
+                  <h2 class="font-headline text-xl font-bold text-white sm:text-2xl">
                     Platform Categories
                   </h2>
                   <p class="mt-1 text-sm text-on-surface-variant">
@@ -93,15 +97,15 @@
               <div
                 v-for="n in 8"
                 :key="n"
-                class="flex animate-pulse items-center gap-4 px-6 py-5"
+                class="flex animate-pulse items-center gap-4 px-4 py-5 sm:px-6"
               >
                 <div class="h-12 w-12 rounded-2xl bg-surface-container-high"></div>
                 <div class="flex-1">
                   <div class="mb-2 h-4 w-40 rounded bg-surface-container-high"></div>
                   <div class="h-3 w-24 rounded bg-surface-container-high"></div>
                 </div>
-                <div class="h-10 w-24 rounded-full bg-surface-container-high"></div>
-                <div class="h-10 w-24 rounded-full bg-surface-container-high"></div>
+                <div class="hidden h-10 w-24 rounded-full bg-surface-container-high sm:block"></div>
+                <div class="hidden h-10 w-24 rounded-full bg-surface-container-high sm:block"></div>
               </div>
             </div>
 
@@ -126,7 +130,7 @@
               <div
                 v-for="category in filteredCategories"
                 :key="category.id"
-                class="flex flex-col gap-4 px-6 py-5 lg:flex-row lg:items-center lg:justify-between"
+                class="flex flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between"
               >
                 <div class="flex min-w-0 items-center gap-4">
                   <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -187,8 +191,8 @@
         class="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
         @click.self="closeCreateModal"
       >
-        <div class="w-full max-w-xl rounded-[2rem] border border-white/10 bg-surface-container p-8 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
-          <div class="mb-6 flex items-center justify-between gap-4">
+        <div class="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[2rem] border border-white/10 bg-surface-container p-5 shadow-[0_20px_60px_rgba(0,0,0,0.5)] sm:p-8">
+          <div class="mb-6 flex items-start justify-between gap-4">
             <div>
               <h2 class="font-headline text-2xl font-bold text-white">
                 Create Category
@@ -224,7 +228,7 @@
               {{ modalErrorMessage }}
             </p>
 
-            <div class="flex justify-end gap-3 pt-2">
+            <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
               <button
                 type="button"
                 class="rounded-full border border-white/10 px-6 py-3 font-bold text-white transition hover:bg-white/5"
@@ -251,8 +255,8 @@
         class="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
         @click.self="closeEditModal"
       >
-        <div class="w-full max-w-xl rounded-[2rem] border border-white/10 bg-surface-container p-8 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
-          <div class="mb-6 flex items-center justify-between gap-4">
+        <div class="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[2rem] border border-white/10 bg-surface-container p-5 shadow-[0_20px_60px_rgba(0,0,0,0.5)] sm:p-8">
+          <div class="mb-6 flex items-start justify-between gap-4">
             <div>
               <h2 class="font-headline text-2xl font-bold text-white">
                 Edit Category
@@ -288,7 +292,7 @@
               {{ modalErrorMessage }}
             </p>
 
-            <div class="flex justify-end gap-3 pt-2">
+            <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
               <button
                 type="button"
                 class="rounded-full border border-white/10 px-6 py-3 font-bold text-white transition hover:bg-white/5"
@@ -315,7 +319,7 @@
         class="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
         @click.self="closeDeleteModal"
       >
-        <div class="w-full max-w-lg rounded-[2rem] border border-white/10 bg-surface-container p-8 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+        <div class="w-full max-w-lg rounded-[2rem] border border-white/10 bg-surface-container p-5 shadow-[0_20px_60px_rgba(0,0,0,0.5)] sm:p-8">
           <div class="mb-6 flex items-start gap-4">
             <div class="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-error/10 text-error">
               <span
@@ -345,7 +349,7 @@
             {{ modalErrorMessage }}
           </p>
 
-          <div class="flex justify-end gap-3">
+          <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
             <button
               type="button"
               class="rounded-full border border-white/10 px-6 py-3 font-bold text-white transition hover:bg-white/5"
@@ -374,12 +378,13 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import api from '@/services/api'
 import TopNavbar from '@/components/layout/TopNavbar.vue'
 import AdminSidebar from '@/components/admin/AdminSidebar.vue'
 
 const sidebarCollapsed = ref(false)
+const mobileSidebarOpen = ref(false)
 
 const loading = ref(false)
 const categories = ref([])
@@ -427,6 +432,27 @@ const filteredCategories = computed(() => {
     const name = category.name?.toLowerCase() || ''
     return name.includes(keyword)
   })
+})
+
+const handleSidebarToggle = () => {
+  if (window.innerWidth < 768) {
+    mobileSidebarOpen.value = !mobileSidebarOpen.value
+    return
+  }
+
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+const handleResize = () => {
+  if (window.innerWidth >= 768) {
+    mobileSidebarOpen.value = false
+  }
+}
+
+watch(mobileSidebarOpen, (isOpen) => {
+  if (window.innerWidth < 768) {
+    document.body.style.overflow = isOpen ? 'hidden' : ''
+  }
 })
 
 const resetMessages = () => {
@@ -591,7 +617,14 @@ const confirmDeleteCategory = async () => {
 }
 
 onMounted(() => {
+  handleResize()
+  window.addEventListener('resize', handleResize)
   loadCategories()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  document.body.style.overflow = ''
 })
 </script>
 
