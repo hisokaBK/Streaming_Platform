@@ -12,7 +12,7 @@
 
         <main
           :class="[
-            'min-w-0 flex min-h-screen flex-1 flex-col pt-0 transition-all duration-300',
+            'min-w-0 flex min-h-screen flex-1 flex-col pt-0 transition-all duration-300 pt-[72px]',
             sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
           ]"
         >

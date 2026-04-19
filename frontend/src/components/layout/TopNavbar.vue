@@ -1,6 +1,6 @@
 <template>
   <nav
-    class="sticky top-0 z-[60] flex w-full items-center justify-between bg-black/80 px-4 py-4 shadow-[0_20px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl sm:px-6"
+    class="fixed left-0 top-0 z-[60] flex w-full items-center justify-between bg-black/80 px-4 py-4 shadow-[0_20px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl sm:px-6"
   >
     <div class="flex items-center gap-3 sm:gap-4">
       <button

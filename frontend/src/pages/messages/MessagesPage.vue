@@ -1,23 +1,52 @@
 <template>
   <div class="dark">
     <div class="min-h-screen overflow-x-hidden bg-background text-on-surface">
-      <TopNavbar @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed" />
+      <TopNavbar @toggle-sidebar="handleSidebarToggle" />
 
       <div class="flex min-h-[calc(100vh-80px)] pt-0">
-        <AppSidebar :collapsed="sidebarCollapsed" />
+        <AppSidebar
+          :collapsed="sidebarCollapsed"
+          :mobile-open="mobileSidebarOpen"
+          @close="mobileSidebarOpen = false"
+        />
 
         <main
           :class="[
-            'flex min-w-0 flex-1 transition-all duration-300',
-            sidebarCollapsed ? 'ml-20' : 'ml-64'
+            'flex min-w-0 flex-1 transition-all duration-300 pt-[72px]',
+            sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
           ]"
         >
-          <!-- Left: Conversations -->
-          <section class="flex min-w-0 w-full flex-col border-r border-outline-variant/10 bg-surface-container-lowest md:w-80 lg:w-96">
-            <div class="p-4 sm:p-5 md:p-6">
-              <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <h1 class="font-headline text-xl font-bold sm:text-2xl">Messages</h1>
+          <div
+            v-if="mobileConversationsOpen"
+            class="fixed inset-0 top-[72px] z-[44] bg-black/60 backdrop-blur-sm md:hidden"
+            @click="mobileConversationsOpen = false"
+          ></div>
 
+          <!-- Left: Conversations -->
+          <section
+            :class="[
+              'flex min-w-0 flex-col border-r border-outline-variant/10 bg-surface-container-lowest transition-transform duration-300',
+              'fixed left-0 top-[72px] z-[45] h-[calc(100vh-72px)] w-[88vw] max-w-sm',
+              mobileConversationsOpen ? 'translate-x-0' : '-translate-x-full',
+              'md:static md:z-auto md:h-auto md:w-80 md:translate-x-0 lg:w-96'
+            ]"
+          >
+            <div class="p-4 sm:p-5 md:p-6">
+              <div class="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <h1 class="font-headline text-xl font-bold sm:text-2xl">Messages</h1>
+                </div>
+
+                <button
+                  type="button"
+                  class="rounded-full p-2 text-on-surface-variant transition hover:bg-surface-container-high hover:text-white md:hidden"
+                  @click="mobileConversationsOpen = false"
+                >
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </div>
+
+              <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div class="flex items-center gap-2 self-start sm:self-auto">
                   <button
                     type="button"
@@ -50,7 +79,7 @@
               </div>
             </div>
 
-            <div class="flex-1 space-y-1 overflow-y-auto px-2 pb-4">
+            <div class="conversation-scroll flex-1 space-y-1 overflow-y-auto px-2 pb-4">
               <div
                 v-if="conversationsLoading"
                 v-for="n in 4"
@@ -176,49 +205,59 @@
           </section>
 
           <!-- Right: Chat -->
-          <section class="hidden min-w-0 flex-1 flex-col bg-surface md:flex">
+          <section class="flex min-w-0 flex-1 flex-col bg-surface">
             <template v-if="activeParticipant">
-              <div class="flex h-20 min-w-0 items-center justify-between bg-surface-container/30 px-4 backdrop-blur-md sm:px-6 lg:px-8">
-                <RouterLink
-                  :to="`/profile/${activeParticipant.id}`"
-                  class="flex min-w-0 items-center gap-4 transition hover:opacity-90"
-                >
-                  <div class="relative shrink-0">
-                    <template v-if="getAvatarUrl(activeParticipant.avatar)">
-                      <img
-                        :src="getAvatarUrl(activeParticipant.avatar)"
-                        :alt="activeParticipant.name || 'Participant avatar'"
-                        class="h-10 w-10 rounded-full object-cover ring-2 ring-primary/40"
-                      />
-                    </template>
+              <div class="flex h-20 min-w-0 items-center justify-between gap-3 bg-surface-container/30 px-4 backdrop-blur-md sm:px-6 lg:px-8">
+                <div class="flex min-w-0 items-center gap-3">
+                  <button
+                    type="button"
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-container-high text-white transition hover:bg-surface-bright md:hidden"
+                    @click="toggleConversationDrawer"
+                  >
+                    <span class="material-symbols-outlined">forum</span>
+                  </button>
 
-                    <template v-else>
-                      <div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary/30 bg-zinc-900 text-sm font-bold uppercase text-white">
-                        {{ getInitials(activeParticipant.name) }}
-                      </div>
-                    </template>
-                  </div>
+                  <RouterLink
+                    :to="`/profile/${activeParticipant.id}`"
+                    class="flex min-w-0 items-center gap-4 transition hover:opacity-90"
+                  >
+                    <div class="relative shrink-0">
+                      <template v-if="getAvatarUrl(activeParticipant.avatar)">
+                        <img
+                          :src="getAvatarUrl(activeParticipant.avatar)"
+                          :alt="activeParticipant.name || 'Participant avatar'"
+                          class="h-10 w-10 rounded-full object-cover ring-2 ring-primary/40"
+                        />
+                      </template>
 
-                  <div class="min-w-0">
-                    <h2 class="truncate font-headline text-base font-bold text-white transition hover:text-primary sm:text-lg">
-                      {{ activeParticipant.name }}
-                    </h2>
-                    <p class="truncate text-xs text-on-surface-variant">
-                      {{ activeParticipant.email }}
-                    </p>
-                  </div>
-                </RouterLink>
+                      <template v-else>
+                        <div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary/30 bg-zinc-900 text-sm font-bold uppercase text-white">
+                          {{ getInitials(activeParticipant.name) }}
+                        </div>
+                      </template>
+                    </div>
+
+                    <div class="min-w-0">
+                      <h2 class="truncate font-headline text-base font-bold text-white transition hover:text-primary sm:text-lg">
+                        {{ activeParticipant.name }}
+                      </h2>
+                      <p class="truncate text-xs text-on-surface-variant">
+                        {{ activeParticipant.email }}
+                      </p>
+                    </div>
+                  </RouterLink>
+                </div>
               </div>
 
               <div
                 ref="messagesContainer"
-                class="flex flex-1 flex-col overflow-y-auto p-4 space-y-4 sm:p-6 lg:p-8"
+                class="messages-scroll flex flex-1 flex-col space-y-5 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8"
               >
                 <div v-if="messagesLoading" class="space-y-5">
                   <div
                     v-for="n in 4"
                     :key="`msg-skeleton-${n}`"
-                    class="flex max-w-[85%] items-end gap-3 animate-pulse opacity-20 sm:max-w-[70%]"
+                    class="flex max-w-[88%] animate-pulse items-end gap-3 opacity-20 sm:max-w-[76%]"
                   >
                     <div class="h-8 w-8 rounded-full bg-surface-container-high"></div>
                     <div class="h-12 w-full rounded-2xl rounded-bl-none bg-surface-container-high"></div>
@@ -264,12 +303,14 @@
                     </template>
 
                     <div
-                      class="max-w-[85%] whitespace-pre-wrap break-words p-3 text-sm shadow-lg sm:max-w-[75%] sm:p-4"
+                      class="message-bubble w-fit max-w-[92%] whitespace-pre-wrap break-words px-4 py-3 text-sm shadow-lg sm:max-w-[80%] sm:px-5 sm:py-4"
                       :class="isMyMessage(message)
-                        ? 'ml-auto rounded-2xl rounded-br-none bg-gradient-to-br from-fuchsia-600 to-purple-600 text-white shadow-[0_5px_20px_rgba(246,128,255,0.2)]'
-                        : 'rounded-2xl rounded-bl-none bg-surface-container-high text-white'"
+                        ? 'ml-auto rounded-[22px] rounded-br-md bg-gradient-to-br from-fuchsia-600 to-purple-600 text-white shadow-[0_6px_24px_rgba(246,128,255,0.22)]'
+                        : 'rounded-[22px] rounded-bl-md bg-surface-container-high text-white'"
                     >
-                      {{ message.content }}
+                      <div class="leading-6">
+                        {{ message.content }}
+                      </div>
 
                       <div
                         class="mt-2 flex justify-end text-[9px]"
@@ -363,8 +404,16 @@
                 </h3>
 
                 <p class="max-w-xs text-sm leading-relaxed text-on-surface-variant">
-                  Choose a conversation from the sidebar or start a new one from the popups.
+                  Choose a conversation from the list or start a new one from the popups.
                 </p>
+
+                <button
+                  type="button"
+                  class="mt-5 rounded-full bg-primary px-5 py-3 text-sm font-bold uppercase tracking-widest text-on-primary shadow-[0_0_15px_rgba(246,128,255,0.25)] transition hover:scale-105 active:scale-95 md:hidden"
+                  @click="openConversationDrawer"
+                >
+                  Open Conversations
+                </button>
               </div>
             </template>
           </section>
@@ -577,7 +626,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import api from '@/services/api'
 import TopNavbar from '@/components/layout/TopNavbar.vue'
@@ -586,6 +635,8 @@ import AppSidebar from '@/components/layout/AppSidebar.vue'
 const route = useRoute()
 
 const sidebarCollapsed = ref(false)
+const mobileSidebarOpen = ref(false)
+const mobileConversationsOpen = ref(false)
 
 const conversations = ref([])
 const messages = ref([])
@@ -747,6 +798,44 @@ const isMyMessage = (message) => {
   return Number(message.sender?.id) === Number(authUser.value?.id)
 }
 
+const handleSidebarToggle = () => {
+  if (window.innerWidth < 768) {
+    mobileSidebarOpen.value = !mobileSidebarOpen.value
+    return
+  }
+
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+const handleResize = () => {
+  if (window.innerWidth >= 768) {
+    mobileSidebarOpen.value = false
+    mobileConversationsOpen.value = false
+  }
+}
+
+watch([mobileSidebarOpen, mobileConversationsOpen], ([sidebarOpen, convoOpen]) => {
+  if (window.innerWidth < 768) {
+    document.body.style.overflow = sidebarOpen || convoOpen ? 'hidden' : ''
+  }
+})
+
+const openConversationDrawer = () => {
+  showEmojiPicker.value = false
+  mobileConversationsOpen.value = true
+}
+
+const toggleConversationDrawer = () => {
+  showEmojiPicker.value = false
+  mobileConversationsOpen.value = !mobileConversationsOpen.value
+}
+
+const closeConversationDrawerOnMobile = () => {
+  if (window.innerWidth < 768) {
+    mobileConversationsOpen.value = false
+  }
+}
+
 const scrollToBottom = async () => {
   await nextTick()
 
@@ -842,6 +931,7 @@ const loadMessages = async (participant) => {
 const openConversation = async (participant) => {
   showEmojiPicker.value = false
   await loadMessages(participant)
+  closeConversationDrawerOnMobile()
 }
 
 const ensureConversationExists = (participant, newMessage = null) => {
@@ -1027,12 +1117,20 @@ watch(
 )
 
 onMounted(async () => {
+  handleResize()
+  window.addEventListener('resize', handleResize)
+
   await Promise.all([loadConversations(), loadUsers(), loadFollowing()])
   await maybeOpenQueryUserConversation()
 
   if (!activeParticipant.value && conversations.value.length > 0) {
     await openConversation(conversations.value[0].participant)
   }
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  document.body.style.overflow = ''
 })
 </script>
 
@@ -1043,5 +1141,40 @@ onMounted(async () => {
     'wght' 400,
     'GRAD' 0,
     'opsz' 24;
+}
+
+.messages-scroll,
+.conversation-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(246, 128, 255, 0.85) rgba(255, 255, 255, 0.06);
+}
+
+.messages-scroll::-webkit-scrollbar,
+.conversation-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.messages-scroll::-webkit-scrollbar-track,
+.conversation-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 9999px;
+}
+
+.messages-scroll::-webkit-scrollbar-thumb,
+.conversation-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(246, 128, 255, 0.95), rgba(168, 85, 247, 0.95));
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.messages-scroll::-webkit-scrollbar-thumb:hover,
+.conversation-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(255, 160, 255, 1), rgba(192, 132, 252, 1));
+  background-clip: padding-box;
+}
+
+.message-bubble {
+  line-height: 1.7;
 }
 </style>
