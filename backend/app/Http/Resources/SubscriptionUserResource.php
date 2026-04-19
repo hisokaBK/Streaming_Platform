@@ -9,7 +9,13 @@ class SubscriptionUserResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $user = $this->streamer ?? $this->subscriber;
+        $user = null;
+
+        if ($this->relationLoaded('subscriber')) {
+            $user = $this->subscriber;
+        } elseif ($this->relationLoaded('streamer')) {
+            $user = $this->streamer;
+        }
 
         return [
             'subscription_id' => $this->id,
