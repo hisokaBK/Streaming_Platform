@@ -190,17 +190,58 @@ class StreamController extends Controller
                 'message' => 'Stream is already ended.',
             ], 422);
         }
-
-        $stream->update([
-            'status' => 'ended',
-            'ended_at' => now(),
-        ]);
-
-        $stream->load(['user', 'categories'])
-            ->loadCount(['comments', 'reactions']);
-
+    
+        $stream = DB::transaction(function () use ($stream) {
+            $stream->update([
+                'status' => 'ended',
+                'ended_at' => now(),
+            ]);
+    
+            $stream->load([
+                'user.profile',
+                'categories',
+                'reactions.user.profile',
+            ]);
+    
+            $video = Video::firstOrCreate(
+                [
+                    'stream_id' => $stream->id,
+                ],
+                [
+                    'user_id' => $stream->user_id,
+                    'title' => $stream->title,
+                    'description' => $stream->description,
+                    'url' => null,
+                    'duration' => 0,
+                ]
+            );
+    
+            if ($stream->categories->isNotEmpty()) {
+                $video->categories()->sync(
+                    $stream->categories->pluck('id')->toArray()
+                );
+            }
+    
+            Comment::where('stream_id', $stream->id)
+                ->whereNull('video_id')
+                ->update([
+                    'video_id' => $video->id,
+                ]);
+    
+            return $stream->fresh()
+                ->load([
+                    'user.profile',
+                    'categories',
+                    'reactions.user.profile',
+                ])
+                ->loadCount([
+                    'comments',
+                    'reactions',
+                ]);
+        });
+    
         return response()->json([
-            'message' => 'Stream ended successfully.',
+            'message' => 'Stream ended successfully and replay video created.',
             'data' => new StreamResource($stream),
         ]);
     }
