@@ -1,24 +1,28 @@
 <template>
   <div class="dark">
     <div class="min-h-screen bg-background text-on-background antialiased selection:bg-primary selection:text-on-primary">
-      <TopNavbar @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed" />
+      <TopNavbar @toggle-sidebar="handleSidebarToggle" />
 
-      <div class="flex min-h-screen">
-        <AdminSidebar :collapsed="sidebarCollapsed" />
+      <div class="flex min-h-screen pt-[72px]">
+        <AdminSidebar
+          :collapsed="sidebarCollapsed"
+          :mobile-open="mobileSidebarOpen"
+          @close="mobileSidebarOpen = false"
+        />
 
         <main
           :class="[
-            'min-h-screen flex-1 p-8 transition-all duration-300',
+            'min-w-0 min-h-screen flex-1 px-4 py-6 transition-all duration-300 sm:px-6 lg:px-8',
             sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
           ]"
         >
-          <div class="relative mb-12">
+          <div class="relative mb-10 sm:mb-12">
             <div class="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-primary/10 blur-[120px]"></div>
 
-            <h1 class="mb-2 font-headline text-4xl font-extrabold tracking-tighter text-on-surface md:text-5xl">
+            <h1 class="mb-2 font-headline text-3xl font-extrabold tracking-tighter text-on-surface sm:text-4xl md:text-5xl">
               Admin Dashboard
             </h1>
-            <p class="max-w-2xl text-lg text-on-surface-variant">
+            <p class="max-w-2xl text-base text-on-surface-variant sm:text-lg">
               Real-time platform overview and engagement metrics.
             </p>
           </div>
@@ -27,7 +31,7 @@
             <div
               v-for="n in 8"
               :key="n"
-              class="rounded-lg border border-white/5 bg-surface-container p-6 animate-pulse"
+              class="animate-pulse rounded-lg border border-white/5 bg-surface-container p-6"
             >
               <div class="mb-4 h-12 w-12 rounded-full bg-surface-container-high"></div>
               <div class="mb-2 h-3 w-24 rounded bg-surface-container-high"></div>
@@ -48,7 +52,7 @@
                 ></div>
 
                 <div class="relative z-10">
-                  <div class="mb-4 flex items-start justify-between">
+                  <div class="mb-4 flex items-start justify-between gap-3">
                     <div :class="['rounded-full p-3', card.iconWrapperClass]">
                       <span
                         class="material-symbols-outlined"
@@ -79,7 +83,7 @@
             </div>
 
             <div class="space-y-6">
-              <div class="mb-2 flex items-center justify-between">
+              <div class="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 class="font-headline text-2xl font-bold text-white">
                   Platform Highlights
                 </h2>
@@ -96,7 +100,7 @@
                 <div
                   v-for="item in topStatCards"
                   :key="item.key"
-                  class="rounded-lg border border-white/5 bg-surface-container-low p-8"
+                  class="rounded-lg border border-white/5 bg-surface-container-low p-5 sm:p-8"
                 >
                   <template v-if="item.data">
                     <div class="mb-2 flex items-center gap-2">
@@ -110,7 +114,7 @@
 
                     <RouterLink
                       :to="item.targetLink(item.data)"
-                      class="mb-2 block text-xl font-bold text-white transition hover:text-primary"
+                      class="mb-2 block text-lg font-bold text-white transition hover:text-primary sm:text-xl"
                     >
                       {{ item.data.title }}
                     </RouterLink>
@@ -123,7 +127,7 @@
                       {{ item.data.user?.name || 'Unknown creator' }}
                     </RouterLink>
 
-                    <div class="flex items-center gap-4 text-sm text-zinc-500">
+                    <div class="flex flex-wrap items-center gap-4 text-sm text-zinc-500">
                       <span class="flex items-center gap-1">
                         <span
                           class="material-symbols-outlined text-xs"
@@ -137,7 +141,7 @@
 
                       <RouterLink
                         :to="item.targetLink(item.data)"
-                        class="ml-auto text-primary transition hover:underline"
+                        class="text-primary transition hover:underline sm:ml-auto"
                       >
                         Open
                       </RouterLink>
@@ -170,13 +174,14 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import api from '@/services/api'
 import TopNavbar from '@/components/layout/TopNavbar.vue'
 import AdminSidebar from '@/components/admin/AdminSidebar.vue'
 
 const sidebarCollapsed = ref(false)
+const mobileSidebarOpen = ref(false)
 const loading = ref(false)
 
 const statistics = ref({
@@ -202,6 +207,27 @@ const statistics = ref({
     most_reacted_video: null,
     most_commented_video: null,
   },
+})
+
+const handleSidebarToggle = () => {
+  if (window.innerWidth < 768) {
+    mobileSidebarOpen.value = !mobileSidebarOpen.value
+    return
+  }
+
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+const handleResize = () => {
+  if (window.innerWidth >= 768) {
+    mobileSidebarOpen.value = false
+  }
+}
+
+watch(mobileSidebarOpen, (isOpen) => {
+  if (window.innerWidth < 768) {
+    document.body.style.overflow = isOpen ? 'hidden' : ''
+  }
 })
 
 const loadStatistics = async () => {
@@ -350,7 +376,14 @@ const topStatCards = computed(() => [
 ])
 
 onMounted(() => {
+  handleResize()
+  window.addEventListener('resize', handleResize)
   loadStatistics()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  document.body.style.overflow = ''
 })
 </script>
 
