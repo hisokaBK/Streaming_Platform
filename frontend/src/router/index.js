@@ -130,13 +130,15 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
-  const user = JSON.parse(localStorage.getItem('user') || 'null')
+  const storedUser = JSON.parse(localStorage.getItem('user') || 'null')
+
+  const role = storedUser?.role || storedUser?.user?.role
 
   if (to.meta.requiresAuth && !token) {
     return next({ name: 'login' })
   }
 
-  if (to.meta.requiresAdmin && user?.role !== 'admin') {
+  if (to.meta.requiresAdmin && role !== 'admin') {
     return next({ name: 'streams' })
   }
 
