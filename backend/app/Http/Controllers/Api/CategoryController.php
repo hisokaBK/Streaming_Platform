@@ -52,7 +52,6 @@ class CategoryController extends Controller
 
     public function destroy(Request $request, Category $category): JsonResponse
     {
-        $this->checkAdmin($request);
 
         $category->delete();
 
