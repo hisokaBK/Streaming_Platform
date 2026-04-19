@@ -1,20 +1,24 @@
 <template>
   <div class="dark">
     <div class="min-h-screen bg-background font-body text-on-surface selection:bg-primary/30">
-      <TopNavbar @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed" />
+      <TopNavbar @toggle-sidebar="handleSidebarToggle" />
 
-      <div class="flex min-h-screen">
-        <AppSidebar :collapsed="sidebarCollapsed" />
+      <div class="flex min-h-screen pt-[72px]">
+        <AppSidebar
+          :collapsed="sidebarCollapsed"
+          :mobile-open="mobileSidebarOpen"
+          @close="mobileSidebarOpen = false"
+        />
 
         <main
           :class="[
-            'flex min-h-screen flex-1 flex-col pt-0 transition-all duration-300',
+            'min-w-0 flex min-h-screen flex-1 flex-col transition-all duration-300',
             sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
           ]"
         >
-          <div class="flex min-h-screen flex-col lg:flex-row">
+          <div class="flex min-h-screen flex-col xl:flex-row">
             <!-- Left content -->
-            <section class="flex flex-1 flex-col gap-6 p-4 lg:p-6">
+            <section class="flex min-w-0 flex-1 flex-col gap-6 p-4 sm:p-5 lg:p-6">
               <!-- Player -->
               <div
                 v-if="loading"
@@ -36,16 +40,16 @@
 
                   <div
                     v-else
-                    class="flex h-full w-full items-center justify-center bg-gradient-to-br from-black via-zinc-950 to-black"
+                    class="flex h-full w-full items-center justify-center bg-gradient-to-br from-black via-zinc-950 to-black px-4 text-center"
                   >
-                    <span class="font-headline text-lg font-bold tracking-widest text-zinc-300">
+                    <span class="font-headline text-base font-bold tracking-widest text-zinc-300 sm:text-lg">
                       VIDEO NOT AVAILABLE
                     </span>
                   </div>
 
-                  <div class="absolute left-6 top-6 flex gap-3">
+                  <div class="absolute left-3 top-3 flex flex-wrap gap-2 sm:left-6 sm:top-6 sm:gap-3">
                     <div
-                      class="flex items-center gap-2 rounded-full bg-surface-container-high px-3 py-1 text-xs font-bold text-on-surface-variant"
+                      class="flex items-center gap-2 rounded-full bg-surface-container-high px-3 py-1 text-[10px] font-bold text-on-surface-variant sm:text-xs"
                     >
                       <span class="h-2 w-2 rounded-full bg-zinc-500"></span>
                       REPLAY
@@ -53,7 +57,7 @@
 
                     <div
                       v-if="video.stream?.status"
-                      class="flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-xs font-bold text-white backdrop-blur-md"
+                      class="flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-[10px] font-bold text-white backdrop-blur-md sm:text-xs"
                     >
                       <span class="material-symbols-outlined text-sm">live_tv</span>
                       {{ video.stream.status.toUpperCase() }}
@@ -62,7 +66,7 @@
 
                   <div
                     v-if="video.duration"
-                    class="absolute bottom-6 right-6 rounded-full bg-black/60 px-4 py-2 text-xs font-bold text-white backdrop-blur-md"
+                    class="absolute bottom-3 right-3 rounded-full bg-black/60 px-3 py-1 text-[10px] font-bold text-white backdrop-blur-md sm:bottom-6 sm:right-6 sm:px-4 sm:py-2 sm:text-xs"
                   >
                     {{ formatDuration(video.duration) }}
                   </div>
@@ -71,9 +75,19 @@
 
               <!-- Title / desc -->
               <div v-if="video" class="space-y-4">
-                <h1 class="font-headline text-2xl font-black tracking-tight text-on-surface md:text-3xl">
-                  {{ video.title }}
-                </h1>
+                <div class="flex items-start justify-between gap-4">
+                  <h1 class="font-headline text-2xl font-black tracking-tight text-on-surface sm:text-3xl">
+                    {{ video.title }}
+                  </h1>
+
+                  <button
+                    type="button"
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-container-high text-white transition hover:bg-surface-bright xl:hidden"
+                    @click="showComments = true"
+                  >
+                    <span class="material-symbols-outlined">comment</span>
+                  </button>
+                </div>
 
                 <div class="flex items-center gap-3">
                   <button
@@ -106,25 +120,25 @@
               <!-- Creator / follow / reactions -->
               <div
                 v-if="video"
-                class="relative flex flex-col justify-between gap-6 rounded-3xl border border-white/5 bg-surface-container p-6 lg:flex-row lg:items-center"
+                class="relative flex flex-col justify-between gap-6 rounded-3xl border border-white/5 bg-surface-container p-4 sm:p-6 lg:flex-row lg:items-center"
               >
-                <div class="flex items-center gap-4">
+                <div class="flex min-w-0 items-center gap-4">
                   <RouterLink
                     :to="`/profile/${video.user?.id}`"
-                    class="block"
+                    class="block shrink-0"
                   >
                     <img
                       :src="getAvatar(video.user?.avatar, video.user?.name)"
                       :alt="video.user?.name || 'Creator avatar'"
-                      class="h-16 w-16 rounded-2xl object-cover transition hover:opacity-90"
+                      class="h-14 w-14 rounded-2xl object-cover transition hover:opacity-90 sm:h-16 sm:w-16"
                     />
                   </RouterLink>
 
-                  <div>
+                  <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-3">
                       <RouterLink
                         :to="`/profile/${video.user?.id}`"
-                        class="font-headline text-lg font-bold transition hover:text-primary"
+                        class="truncate font-headline text-base font-bold transition hover:text-primary sm:text-lg"
                       >
                         {{ video.user?.name || 'Unknown creator' }}
                       </RouterLink>
@@ -151,21 +165,21 @@
                       </RouterLink>
                     </div>
 
-                    <p class="text-sm text-on-surface-variant">
+                    <p class="truncate text-sm text-on-surface-variant">
                       {{ video.user?.email || 'No email available' }}
                     </p>
                   </div>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-4">
-                  <div class="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-secondary px-6 py-3 font-bold text-on-primary-fixed">
+                <div class="flex flex-wrap items-center gap-3 sm:gap-4">
+                  <div class="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-secondary px-5 py-3 font-bold text-on-primary-fixed sm:px-6">
                     <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">
                       favorite
                     </span>
                     <span>Reactions</span>
                   </div>
 
-                  <div class="flex items-center gap-2 rounded-full bg-surface-container-high px-5 py-3 text-sm font-bold text-on-surface-variant">
+                  <div class="flex items-center gap-2 rounded-full bg-surface-container-high px-4 py-3 text-sm font-bold text-on-surface-variant sm:px-5">
                     <span class="material-symbols-outlined text-primary">favorite</span>
                     <span>{{ formatCompact(totalReactions) }}</span>
                   </div>
@@ -175,9 +189,9 @@
               <!-- Reactions summary -->
               <div
                 v-if="video"
-                class="rounded-3xl border border-white/5 bg-surface-container p-6"
+                class="rounded-3xl border border-white/5 bg-surface-container p-4 sm:p-6"
               >
-                <div class="mb-4 flex items-center justify-between">
+                <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <h2 class="font-headline text-xl font-black tracking-tight">
                     Reactions Summary
                   </h2>
@@ -205,27 +219,49 @@
 
               <div
                 v-if="!loading && !video"
-                class="rounded-3xl bg-surface-container-low p-12 text-center text-on-surface-variant"
+                class="rounded-3xl bg-surface-container-low p-8 text-center text-on-surface-variant sm:p-12"
               >
                 Video not found.
               </div>
             </section>
 
+            <!-- Mobile comments overlay -->
+            <div
+              v-if="showComments && isMobileComments"
+              class="fixed inset-0 top-[72px] z-40 bg-black/60 backdrop-blur-sm xl:hidden"
+              @click="showComments = false"
+            ></div>
+
             <!-- Right comments -->
             <aside
-              class="sticky top-20 flex h-[calc(100vh-5rem)] w-full flex-col border-l border-white/5 bg-surface-container-low/50 backdrop-blur-xl lg:w-[420px]"
+              v-if="showComments || !isMobileComments"
+              :class="[
+                'border-white/5 bg-surface-container-low/50 backdrop-blur-xl',
+                'xl:sticky xl:top-20 xl:h-[calc(100vh-5rem)] xl:w-[420px] xl:border-l',
+                'fixed inset-x-0 bottom-0 top-[72px] z-50 flex flex-col border-t xl:static xl:inset-auto xl:z-auto xl:border-t-0',
+              ]"
             >
-              <div class="flex items-center justify-between border-b border-white/5 p-6">
-                <h2 class="font-headline text-xl font-black tracking-tight">
+              <div class="flex items-center justify-between border-b border-white/5 p-4 sm:p-6">
+                <h2 class="font-headline text-lg font-black tracking-tight sm:text-xl">
                   COMMENTS
                 </h2>
 
-                <div class="rounded-full bg-surface-container-high px-4 py-2 text-xs font-bold text-on-surface-variant">
-                  {{ video?.comments_count || 0 }}
+                <div class="flex items-center gap-3">
+                  <div class="rounded-full bg-surface-container-high px-4 py-2 text-xs font-bold text-on-surface-variant">
+                    {{ video?.comments_count || 0 }}
+                  </div>
+
+                  <button
+                    type="button"
+                    class="rounded-full p-2 text-on-surface-variant transition hover:bg-surface-container-high hover:text-white xl:hidden"
+                    @click="showComments = false"
+                  >
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
                 </div>
               </div>
 
-              <div class="hide-scrollbar flex-1 space-y-6 overflow-y-auto p-6">
+              <div class="hide-scrollbar flex-1 space-y-6 overflow-y-auto p-4 sm:p-6">
                 <div
                   v-if="loading"
                   class="space-y-4"
@@ -259,7 +295,7 @@
                 >
                   <RouterLink
                     :to="`/profile/${comment.user?.id}`"
-                    class="block"
+                    class="block shrink-0"
                   >
                     <img
                       :src="getAvatar(comment.user?.avatar, comment.user?.name)"
@@ -268,27 +304,27 @@
                     />
                   </RouterLink>
 
-                  <div class="flex-1 space-y-1">
-                    <div class="flex items-center justify-between">
+                  <div class="min-w-0 flex-1 space-y-1">
+                    <div class="flex items-center justify-between gap-3">
                       <RouterLink
                         :to="`/profile/${comment.user?.id}`"
-                        class="text-sm font-bold text-secondary transition hover:text-primary"
+                        class="truncate text-sm font-bold text-secondary transition hover:text-primary"
                       >
                         {{ comment.user?.name || 'Unknown user' }}
                       </RouterLink>
-                      <span class="text-[10px] font-bold uppercase text-on-surface-variant">
+                      <span class="shrink-0 text-[10px] font-bold uppercase text-on-surface-variant">
                         {{ formatCommentTime(comment.created_at) }}
                       </span>
                     </div>
 
-                    <p class="text-sm leading-relaxed text-on-surface-variant">
+                    <p class="break-words text-sm leading-relaxed text-on-surface-variant">
                       {{ comment.content }}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div class="border-t border-white/5 bg-surface-container p-6">
+              <div class="border-t border-white/5 bg-surface-container p-4 sm:p-6">
                 <div class="rounded-2xl bg-surface-container-low p-4 text-sm text-on-surface-variant">
                   Comments are displayed from the current video data.
                 </div>
@@ -296,13 +332,22 @@
             </aside>
           </div>
         </main>
+
+        <button
+          v-if="isMobileComments && !showComments"
+          type="button"
+          class="fixed bottom-6 right-4 z-40 rounded-full bg-gradient-to-r from-primary to-secondary px-5 py-3 text-sm font-bold text-on-primary-fixed shadow-[0_10px_30px_rgba(246,128,255,0.35)] transition hover:scale-105 active:scale-95 sm:bottom-8 sm:right-8 sm:px-6 sm:py-4"
+          @click="showComments = true"
+        >
+          Open Comments
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import api from '@/services/api'
 import TopNavbar from '@/components/layout/TopNavbar.vue'
@@ -311,13 +356,16 @@ import AppSidebar from '@/components/layout/AppSidebar.vue'
 const route = useRoute()
 
 const sidebarCollapsed = ref(false)
+const mobileSidebarOpen = ref(false)
 const loading = ref(false)
 const followLoading = ref(false)
 
 const video = ref(null)
 const showDescription = ref(false)
+const showComments = ref(false)
 const isFollowing = ref(false)
 const authUser = ref(null)
+const isMobileComments = ref(false)
 
 const reactionOptions = [
   { type: 'like', emoji: '👍' },
@@ -350,6 +398,34 @@ const getStoredUser = () => {
     return null
   }
 }
+
+const handleSidebarToggle = () => {
+  if (window.innerWidth < 768) {
+    mobileSidebarOpen.value = !mobileSidebarOpen.value
+    return
+  }
+
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+const handleResize = () => {
+  isMobileComments.value = window.innerWidth < 1280
+
+  if (window.innerWidth >= 768) {
+    mobileSidebarOpen.value = false
+  }
+
+  if (window.innerWidth >= 1280) {
+    showComments.value = true
+  } else {
+    showComments.value = false
+  }
+}
+
+watch([mobileSidebarOpen, showComments, isMobileComments], ([sidebarOpen, commentsOpen, mobileComments]) => {
+  const lockScroll = sidebarOpen || (mobileComments && commentsOpen)
+  document.body.style.overflow = lockScroll ? 'hidden' : ''
+})
 
 const getAvatar = (avatar, name = 'User') => {
   if (avatar) return buildStorageUrl(avatar)
@@ -466,8 +542,16 @@ const toggleFollow = async () => {
 
 onMounted(async () => {
   authUser.value = getStoredUser()
+  handleResize()
+  window.addEventListener('resize', handleResize)
+
   await loadVideo()
   await loadFollowingState()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  document.body.style.overflow = ''
 })
 </script>
 
