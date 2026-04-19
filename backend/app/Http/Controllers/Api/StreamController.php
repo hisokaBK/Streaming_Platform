@@ -15,6 +15,8 @@ use App\Models\Stream;
 use App\Models\Subscription;
 use App\Models\Notification;
 use App\Models\Category;
+use App\Models\Video;
+use App\Models\Comment;
 
 class StreamController extends Controller
 {
@@ -190,19 +192,19 @@ class StreamController extends Controller
                 'message' => 'Stream is already ended.',
             ], 422);
         }
-    
+
         $stream = DB::transaction(function () use ($stream) {
             $stream->update([
                 'status' => 'ended',
                 'ended_at' => now(),
             ]);
-    
+
             $stream->load([
                 'user.profile',
                 'categories',
                 'reactions.user.profile',
             ]);
-    
+
             $video = Video::firstOrCreate(
                 [
                     'stream_id' => $stream->id,
@@ -211,23 +213,23 @@ class StreamController extends Controller
                     'user_id' => $stream->user_id,
                     'title' => $stream->title,
                     'description' => $stream->description,
-                    'url' => null,
+                    'url' => '',
                     'duration' => 0,
                 ]
             );
-    
+
             if ($stream->categories->isNotEmpty()) {
                 $video->categories()->sync(
                     $stream->categories->pluck('id')->toArray()
                 );
             }
-    
+
             Comment::where('stream_id', $stream->id)
                 ->whereNull('video_id')
                 ->update([
                     'video_id' => $video->id,
                 ]);
-    
+
             return $stream->fresh()
                 ->load([
                     'user.profile',
@@ -239,7 +241,7 @@ class StreamController extends Controller
                     'reactions',
                 ]);
         });
-    
+
         return response()->json([
             'message' => 'Stream ended successfully and replay video created.',
             'data' => new StreamResource($stream),
