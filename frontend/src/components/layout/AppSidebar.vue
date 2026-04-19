@@ -1,11 +1,11 @@
 <template>
   <aside
     :class="[
-      'fixed left-0 top-0 z-40 hidden h-screen bg-zinc-900 pt-24 shadow-2xl transition-all duration-300 md:flex md:flex-col',
+      'fixed left-0 top-[72px] z-40 hidden h-[calc(100vh-72px)] bg-zinc-900 shadow-2xl transition-all duration-300 md:flex md:flex-col',
       collapsed ? 'w-20' : 'w-64'
     ]"
   >
-    <div class="flex-1 space-y-2 px-3">
+    <div class="flex-1 space-y-2 px-3 py-4">
       <RouterLink
         v-for="item in links"
         :key="item.name"
@@ -31,7 +31,6 @@
     </div>
 
     <div class="space-y-2 border-t border-white/5 px-3 py-4">
-
       <button
         type="button"
         class="flex w-full items-center rounded-xl px-4 py-3 text-sm text-zinc-500 transition-all duration-200 hover:bg-white/5 hover:text-zinc-100"

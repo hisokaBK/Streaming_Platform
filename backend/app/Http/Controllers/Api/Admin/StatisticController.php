@@ -23,14 +23,11 @@ class StatisticController extends Controller
 
         $totalStreams = Stream::count();
         $liveStreams = Stream::where('status', 'live')->count();
-        $endedStreams = Stream::where('status', 'ended')->count();
 
         $totalVideos = Video::count();
 
         $totalComments = Comment::count();
         $totalReactions = Reaction::count();
-        $totalSubscriptions = Subscription::count();
-        $totalMessages = Message::count();
 
         $mostReactedStream = Stream::withCount('reactions')
             ->orderByDesc('reactions_count')
@@ -65,7 +62,6 @@ class StatisticController extends Controller
             'streams' => [
                 'total_streams' => $totalStreams,
                 'live_streams' => $liveStreams,
-                'ended_streams' => $endedStreams,
             ],
 
             'videos' => [
@@ -75,8 +71,6 @@ class StatisticController extends Controller
             'engagement' => [
                 'total_comments' => $totalComments,
                 'total_reactions' => $totalReactions,
-                'total_subscriptions' => $totalSubscriptions,
-                'total_messages' => $totalMessages,
             ],
 
             'top_stats' => [

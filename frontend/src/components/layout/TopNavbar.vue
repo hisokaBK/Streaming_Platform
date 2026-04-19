@@ -1,6 +1,6 @@
 <template>
   <nav
-    class="sticky top-0 z-50 flex w-full items-center justify-between bg-black/80 px-6 py-4 shadow-[0_20px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl"
+    class="sticky top-0 z-[60] flex w-full items-center justify-between bg-black/80 px-6 py-4 shadow-[0_20px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl"
   >
     <div class="flex items-center gap-4">
       <button
@@ -39,6 +39,14 @@
       >
         Videos
       </RouterLink>
+
+      <RouterLink
+        v-if="isAdmin"
+        class="font-manrope tracking-tight text-zinc-400 transition-colors hover:text-zinc-100"
+        to="/admin/dashboard"
+      >
+        Dashboard
+      </RouterLink>
     </div>
 
     <div class="flex items-center gap-4">
@@ -52,6 +60,14 @@
           v-if="hasUnreadNotifications"
           class="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-black"
         ></span>
+      </RouterLink>
+
+      <RouterLink
+        v-if="isAdmin"
+        to="/admin/dashboard"
+        class="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary transition hover:bg-primary/20 md:hidden"
+      >
+        Admin
       </RouterLink>
 
       <RouterLink to="/profile" class="block">
@@ -93,12 +109,7 @@ const buildStorageUrl = (path) => {
 
 const avatarUrl = computed(() => {
   const avatar = authProfile.value?.avatar
-
-  if (avatar) {
-    return buildStorageUrl(avatar)
-  }
-
-  return null
+  return avatar ? buildStorageUrl(avatar) : null
 })
 
 const userInitials = computed(() => {
@@ -111,6 +122,10 @@ const userInitials = computed(() => {
     .map((part) => part[0])
     .join('')
     .toUpperCase()
+})
+
+const isAdmin = computed(() => {
+  return authProfile.value?.user?.role === 'admin'
 })
 
 const loadAuthProfile = async () => {
@@ -126,7 +141,6 @@ const loadAuthProfile = async () => {
 const loadNotificationsState = async () => {
   try {
     const response = await api.get('/notification/notifications?page=1')
-
     const notifications = response.data?.data?.data || response.data?.data || []
 
     hasUnreadNotifications.value = notifications.some(
