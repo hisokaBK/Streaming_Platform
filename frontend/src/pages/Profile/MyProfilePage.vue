@@ -73,52 +73,30 @@
                 </div>
 
                 <div class="flex gap-10">
-                  <div>
+                  <button
+                    type="button"
+                    class="text-left transition hover:opacity-80"
+                    @click="openFollowersModal"
+                  >
                     <span class="block font-headline text-2xl font-black text-white">
                       {{ profile?.user?.followers_count ?? 0 }}
                     </span>
                     <span class="font-label text-xs uppercase tracking-widest text-zinc-500">
                       Followers
                     </span>
-                  </div>
+                  </button>
 
-                  <div>
+                  <button
+                    type="button"
+                    class="text-left transition hover:opacity-80"
+                    @click="openFollowingModal"
+                  >
                     <span class="block font-headline text-2xl font-black text-white">
                       {{ profile?.user?.following_count ?? 0 }}
                     </span>
                     <span class="font-label text-xs uppercase tracking-widest text-zinc-500">
                       Following
                     </span>
-                  </div>
-                </div>
-
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <button
-                    type="button"
-                    class="rounded-2xl border border-white/10 bg-surface-container-high p-5 text-left transition hover:bg-surface-container"
-                    @click="openFollowersModal"
-                  >
-                    <div class="mb-2 flex items-center justify-between">
-                      <h3 class="font-headline text-lg font-bold">Followers</h3>
-                      <span class="material-symbols-outlined text-primary">group</span>
-                    </div>
-                    <p class="text-sm text-zinc-500">
-                      See all followers
-                    </p>
-                  </button>
-
-                  <button
-                    type="button"
-                    class="rounded-2xl border border-white/10 bg-surface-container-high p-5 text-left transition hover:bg-surface-container"
-                    @click="openFollowingModal"
-                  >
-                    <div class="mb-2 flex items-center justify-between">
-                      <h3 class="font-headline text-lg font-bold">Following</h3>
-                      <span class="material-symbols-outlined text-primary">person_add</span>
-                    </div>
-                    <p class="text-sm text-zinc-500">
-                      See all following
-                    </p>
                   </button>
                 </div>
               </div>
@@ -190,6 +168,13 @@
                       class="rounded-full border border-white/10 bg-surface-container px-4 py-3 text-sm text-on-surface outline-none"
                     >
                       <option value="all">All categories</option>
+                      <option
+                        v-for="category in videoCategories"
+                        :key="category.id"
+                        :value="String(category.id)"
+                      >
+                        {{ category.name }}
+                      </option>
                     </select>
                   </div>
                 </div>
@@ -210,6 +195,19 @@
                       <div class="absolute bottom-3 right-3 rounded bg-black/80 px-2 py-1 text-[10px] font-bold text-white">
                         {{ video.duration || '00:00' }}
                       </div>
+                    </div>
+
+                    <div
+                      v-if="video.categories?.length"
+                      class="mb-2 flex flex-wrap gap-2"
+                    >
+                      <span
+                        v-for="category in video.categories"
+                        :key="`${video.id}-${category.id}`"
+                        class="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-primary"
+                      >
+                        {{ category.name }}
+                      </span>
                     </div>
 
                     <h3 class="mb-1 font-headline text-lg font-bold transition-colors group-hover:text-primary">
@@ -430,7 +428,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onBeforeUnmount, reactive, ref } from 'vue'
+import { computed, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import api from '@/services/api'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
@@ -467,6 +465,26 @@ const currentPage = ref(1)
 const perPage = 4
 const selectedCategory = ref('all')
 
+const normalizeCollection = (payload) => {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.data)) return payload.data
+  if (Array.isArray(payload?.data?.data)) return payload.data.data
+  return []
+}
+
+const buildStorageUrl = (path) => {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  return `http://localhost:8000/storage/${path}`
+}
+
+const normalizeUsersWithAvatar = (users = []) => {
+  return users.map((user) => ({
+    ...user,
+    avatar: user?.avatar ? buildStorageUrl(user.avatar) : null,
+  }))
+}
+
 const coverImage = computed(() => {
   return profile.value?.background_image
     ? buildStorageUrl(profile.value.background_image)
@@ -481,6 +499,26 @@ const avatarImage = computed(() => {
 
 const bioLength = computed(() => (editForm.bio || '').length)
 
+const videoCategories = computed(() => {
+  const videos = profile.value?.videos_preview || []
+  const categoriesMap = new Map()
+
+  videos.forEach((video) => {
+    const categories = video?.categories || []
+
+    categories.forEach((category) => {
+      if (!categoriesMap.has(Number(category.id))) {
+        categoriesMap.set(Number(category.id), {
+          id: Number(category.id),
+          name: category.name,
+        })
+      }
+    })
+  })
+
+  return Array.from(categoriesMap.values())
+})
+
 const filteredVideos = computed(() => {
   const videos = profile.value?.videos_preview || []
 
@@ -488,7 +526,13 @@ const filteredVideos = computed(() => {
     return videos
   }
 
-  return videos
+  return videos.filter((video) => {
+    const categories = video?.categories || []
+
+    return categories.some(
+      (category) => String(category.id) === String(selectedCategory.value)
+    )
+  })
 })
 
 const totalPages = computed(() => {
@@ -500,11 +544,15 @@ const paginatedVideos = computed(() => {
   return filteredVideos.value.slice(start, start + perPage)
 })
 
-const buildStorageUrl = (path) => {
-  if (!path) return null
-  if (path.startsWith('http')) return path
-  return `http://localhost:8000/storage/${path}`
-}
+watch(selectedCategory, () => {
+  currentPage.value = 1
+})
+
+watch(totalPages, (value) => {
+  if (currentPage.value > value) {
+    currentPage.value = value
+  }
+})
 
 const formatDate = (date) => {
   if (!date) return 'Unknown date'
@@ -532,7 +580,7 @@ const openFollowersModal = async () => {
   try {
     const userId = profile.value?.user?.id
     const response = await api.get(`/subscrip/users/${userId}/followers`)
-    followersUsers.value = response.data?.data?.followers || response.data?.data || []
+    followersUsers.value = normalizeUsersWithAvatar(normalizeCollection(response.data))
   } catch (error) {
     followersUsers.value = []
     console.error('Failed to load followers', error)
@@ -548,7 +596,7 @@ const openFollowingModal = async () => {
   try {
     const userId = profile.value?.user?.id
     const response = await api.get(`/subscrip/users/${userId}/following`)
-    followingUsers.value = response.data?.data?.following || response.data?.data || []
+    followingUsers.value = normalizeUsersWithAvatar(normalizeCollection(response.data))
   } catch (error) {
     followingUsers.value = []
     console.error('Failed to load following', error)
