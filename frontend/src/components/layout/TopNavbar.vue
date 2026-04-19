@@ -1,8 +1,8 @@
 <template>
   <nav
-    class="sticky top-0 z-[60] flex w-full items-center justify-between bg-black/80 px-6 py-4 shadow-[0_20px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl"
+    class="sticky top-0 z-[60] flex w-full items-center justify-between bg-black/80 px-4 py-4 shadow-[0_20px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl sm:px-6"
   >
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-3 sm:gap-4">
       <button
         type="button"
         class="rounded-full p-2 text-zinc-400 transition-all duration-300 hover:bg-white/10 hover:text-white active:scale-90"
@@ -12,13 +12,13 @@
       </button>
 
       <span
-        class="bg-gradient-to-br from-fuchsia-500 to-purple-600 bg-clip-text font-headline text-2xl font-black tracking-tighter text-transparent"
+        class="bg-gradient-to-br from-fuchsia-500 to-purple-600 bg-clip-text font-headline text-xl font-black tracking-tighter text-transparent sm:text-2xl"
       >
         HSKn
       </span>
     </div>
 
-    <div class="hidden items-center gap-6 md:flex">
+    <div class="hidden items-center gap-6 lg:flex">
       <RouterLink
         class="font-manrope tracking-tight text-zinc-400 transition-colors hover:text-zinc-100"
         to="/"
@@ -49,7 +49,7 @@
       </RouterLink>
     </div>
 
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-2 sm:gap-4">
       <RouterLink
         to="/notifications"
         class="relative rounded-full p-2 text-zinc-400 transition-all duration-300 hover:bg-white/10 hover:text-white active:scale-90"
@@ -65,12 +65,12 @@
       <RouterLink
         v-if="isAdmin"
         to="/admin/dashboard"
-        class="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary transition hover:bg-primary/20 md:hidden"
+        class="rounded-full border border-primary/20 bg-primary/10 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-primary transition hover:bg-primary/20 md:hidden"
       >
         Admin
       </RouterLink>
 
-      <RouterLink to="/profile" class="block">
+      <RouterLink to="/profile" class="block shrink-0">
         <template v-if="avatarUrl">
           <img
             :src="avatarUrl"

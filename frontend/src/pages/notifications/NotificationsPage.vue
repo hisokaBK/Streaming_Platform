@@ -1,219 +1,223 @@
 <template>
   <div class="dark">
-    <div class="min-h-screen bg-background text-on-surface font-body selection:bg-primary/30">
+    <div class="min-h-screen overflow-x-hidden bg-background text-on-surface font-body selection:bg-primary/30">
       <TopNavbar @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed" />
 
-      <div class="flex min-h-screen">
+      <div class="flex min-h-screen w-full">
         <AppSidebar :collapsed="sidebarCollapsed" />
 
         <main
           :class="[
-            'mx-auto w-full max-w-7xl px-6 pb-20 pt-32 transition-all duration-300 md:px-12',
-            sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'
+            'min-w-0 flex-1 px-4 pb-20 pt-28 transition-all duration-300 sm:px-6 md:px-8 lg:px-12',
+            sidebarCollapsed
+              ? 'ml-20'
+              : 'ml-64'
           ]"
         >
-          <!-- Header -->
-          <header class="mb-12 flex flex-col justify-between gap-6 md:flex-row md:items-end">
-            <div>
-              <h1 class="mb-2 font-headline text-5xl font-extrabold tracking-tighter text-on-surface">
-                Notifications
-              </h1>
-              <p class="text-lg text-on-surface-variant">
-                Stay updated with the latest live activity from streamers you follow.
-              </p>
-            </div>
-
-            <div class="flex items-center gap-4">
-              <div class="flex items-center gap-2 rounded-full bg-surface-container-high px-4 py-2">
-                <span
-                  class="h-2 w-2 rounded-full bg-primary"
-                  :class="unreadCount > 0 ? 'animate-pulse' : ''"
-                ></span>
-                <span class="text-sm font-bold tracking-tight text-on-surface">
-                  {{ unreadCount }} UNREAD
-                </span>
+          <div class="mx-auto w-full max-w-7xl">
+            <!-- Header -->
+            <header class="mb-8 flex flex-col gap-5 md:mb-12 md:flex-row md:items-end md:justify-between">
+              <div class="min-w-0">
+                <h1 class="mb-2 font-headline text-3xl font-extrabold tracking-tighter text-on-surface sm:text-4xl lg:text-5xl">
+                  Notifications
+                </h1>
+                <p class="text-sm text-on-surface-variant sm:text-base lg:text-lg">
+                  Stay updated with the latest live activity from streamers you follow.
+                </p>
               </div>
 
-              <button
-                type="button"
-                :disabled="markAllLoading || unreadCount === 0"
-                class="rounded-full border border-primary/20 px-6 py-2.5 text-sm font-semibold text-primary transition-all hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
-                @click="markAllAsRead"
-              >
-                {{ markAllLoading ? 'Marking...' : 'Mark all as read' }}
-              </button>
-            </div>
-          </header>
-
-          <p v-if="generalError" class="mb-6 text-sm text-error">
-            {{ generalError }}
-          </p>
-
-          <!-- Notifications List -->
-          <div class="space-y-4">
-            <!-- Loading -->
-            <div
-              v-if="loading"
-              v-for="n in 5"
-              :key="`loading-${n}`"
-              class="animate-pulse rounded-lg bg-surface-container-lowest/50 p-6"
-            >
-              <div class="mb-3 flex items-center gap-2">
-                <div class="h-3 w-20 rounded-full bg-surface-container-high"></div>
-                <div class="h-1 w-1 rounded-full bg-surface-container-high"></div>
-                <div class="h-3 w-24 rounded-full bg-surface-container-high"></div>
-              </div>
-              <div class="mb-2 h-5 w-3/4 rounded-full bg-surface-container-high"></div>
-              <div class="h-5 w-1/2 rounded-full bg-surface-container-high"></div>
-            </div>
-
-            <!-- Empty -->
-            <div
-              v-else-if="notifications.length === 0"
-              class="rounded-3xl bg-surface-container-low p-12 text-center"
-            >
-              <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <span class="material-symbols-outlined text-3xl">notifications_off</span>
-              </div>
-              <h2 class="mb-2 font-headline text-2xl font-bold text-on-surface">
-                No notifications yet
-              </h2>
-              <p class="text-on-surface-variant">
-                When a streamer you follow goes live, you'll see it here.
-              </p>
-            </div>
-
-            <!-- Items -->
-            <div
-              v-else
-              v-for="notification in notifications"
-              :key="notification.id"
-              class="group relative transition-all duration-300"
-              :class="notification.is_read
-                ? 'rounded-lg bg-surface-container-lowest hover:bg-surface-container-low'
-                : 'rounded-r-lg rounded-l-md border-l-4 border-primary bg-surface-container-low shadow-[0_10px_30px_rgba(246,128,255,0.05)] hover:bg-surface-container'"
-            >
-              <div class="flex items-start justify-between gap-4 p-6">
-                <div class="flex flex-1 items-start gap-4">
-                  <img
-                    :src="getActorAvatar(notification)"
-                    :alt="notification.actor?.name || 'Live actor'"
-                    class="h-12 w-12 rounded-full border border-primary/20 object-cover"
-                  />
-
-                  <div class="flex-1">
-                    <div class="mb-1 flex flex-wrap items-center gap-2">
-                      <span
-                        class="text-xs font-bold uppercase tracking-widest"
-                        :class="notification.is_read ? 'text-on-surface-variant' : 'text-primary'"
-                      >
-                        {{ notification.is_read ? 'Live Update' : 'New Live' }}
-                      </span>
-
-                      <span class="h-1 w-1 rounded-full bg-outline-variant"></span>
-
-                      <span class="text-xs text-on-surface-variant">
-                        {{ formatNotificationDate(notification.created_at) }}
-                      </span>
-                    </div>
-
-                    <RouterLink
-                      v-if="notification.stream?.id"
-                      :to="`/streams/${notification.stream.id}`"
-                      class="block"
-                    >
-                      <p
-                        class="text-lg leading-relaxed transition-colors"
-                        :class="notification.is_read
-                          ? 'font-normal text-on-surface-variant hover:text-on-surface'
-                          : 'font-medium text-on-surface hover:text-primary'"
-                      >
-                        <span class="font-bold">
-                          {{ notification.actor?.name || 'Someone' }}
-                        </span>
-                        is live now —
-                        <span class="underline decoration-primary/40 underline-offset-4">
-                          {{ notification.stream?.title || 'Open stream' }}
-                        </span>
-                      </p>
-                    </RouterLink>
-
-                    <p
-                      v-else
-                      class="text-lg leading-relaxed"
-                      :class="notification.is_read
-                        ? 'font-normal text-on-surface-variant'
-                        : 'font-medium text-on-surface'"
-                    >
-                      {{ notification.title || notification.content }}
-                    </p>
-
-                    <p class="mt-2 text-sm text-on-surface-variant">
-                      {{ notification.content }}
-                    </p>
-                  </div>
+              <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-start md:justify-end">
+                <div class="flex items-center justify-center gap-2 rounded-full bg-surface-container-high px-4 py-2 sm:justify-start">
+                  <span
+                    class="h-2 w-2 rounded-full bg-primary"
+                    :class="unreadCount > 0 ? 'animate-pulse' : ''"
+                  ></span>
+                  <span class="text-xs font-bold tracking-tight text-on-surface sm:text-sm">
+                    {{ unreadCount }} UNREAD
+                  </span>
                 </div>
 
                 <button
-                  v-if="!notification.is_read"
                   type="button"
-                  :disabled="markOneLoadingId === notification.id"
-                  class="shrink-0 translate-x-2 rounded-full bg-primary/10 px-4 py-2 text-xs font-bold text-on-surface transition-all duration-300 group-hover:translate-x-0 group-hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
-                  @click="markOneAsRead(notification.id)"
+                  :disabled="markAllLoading || unreadCount === 0"
+                  class="w-full rounded-full border border-primary/20 px-4 py-2.5 text-sm font-semibold text-primary transition-all hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-6"
+                  @click="markAllAsRead"
                 >
-                  <span class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-sm">done_all</span>
-                    {{ markOneLoadingId === notification.id ? 'Loading...' : 'Mark as read' }}
-                  </span>
+                  {{ markAllLoading ? 'Marking...' : 'Mark all as read' }}
                 </button>
               </div>
-            </div>
-          </div>
+            </header>
 
-          <!-- Pagination -->
-          <footer
-            v-if="!loading && meta.last_page > 1"
-            class="mt-16 flex items-center justify-between"
-          >
-            <p class="text-sm text-on-surface-variant">
-              Showing {{ notifications.length }} of {{ meta.total }} notifications
+            <p v-if="generalError" class="mb-6 text-sm text-error">
+              {{ generalError }}
             </p>
 
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                class="rounded-full p-2 text-on-surface-variant transition-all hover:bg-surface-container-high hover:text-on-surface disabled:opacity-40"
-                :disabled="meta.current_page === 1"
-                @click="goToPage(meta.current_page - 1)"
+            <!-- Notifications List -->
+            <div class="space-y-4">
+              <!-- Loading -->
+              <div
+                v-if="loading"
+                v-for="n in 5"
+                :key="`loading-${n}`"
+                class="animate-pulse rounded-lg bg-surface-container-lowest/50 p-4 sm:p-5 md:p-6"
               >
-                <span class="material-symbols-outlined">chevron_left</span>
-              </button>
-
-              <div class="flex items-center gap-1">
-                <button
-                  v-for="page in visiblePages"
-                  :key="page"
-                  type="button"
-                  class="flex h-10 w-10 items-center justify-center rounded-full font-bold transition-all"
-                  :class="page === meta.current_page
-                    ? 'bg-primary text-on-primary'
-                    : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'"
-                  @click="goToPage(page)"
-                >
-                  {{ page }}
-                </button>
+                <div class="mb-3 flex items-center gap-2">
+                  <div class="h-3 w-20 rounded-full bg-surface-container-high"></div>
+                  <div class="h-1 w-1 rounded-full bg-surface-container-high"></div>
+                  <div class="h-3 w-24 rounded-full bg-surface-container-high"></div>
+                </div>
+                <div class="mb-2 h-5 w-3/4 rounded-full bg-surface-container-high"></div>
+                <div class="h-5 w-1/2 rounded-full bg-surface-container-high"></div>
               </div>
 
-              <button
-                type="button"
-                class="rounded-full p-2 text-on-surface-variant transition-all hover:bg-surface-container-high hover:text-on-surface disabled:opacity-40"
-                :disabled="meta.current_page === meta.last_page"
-                @click="goToPage(meta.current_page + 1)"
+              <!-- Empty -->
+              <div
+                v-else-if="notifications.length === 0"
+                class="rounded-3xl bg-surface-container-low p-8 text-center sm:p-10 md:p-12"
               >
-                <span class="material-symbols-outlined">chevron_right</span>
-              </button>
+                <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary sm:h-16 sm:w-16">
+                  <span class="material-symbols-outlined text-3xl">notifications_off</span>
+                </div>
+                <h2 class="mb-2 font-headline text-xl font-bold text-on-surface sm:text-2xl">
+                  No notifications yet
+                </h2>
+                <p class="text-sm text-on-surface-variant sm:text-base">
+                  When a streamer you follow goes live, you'll see it here.
+                </p>
+              </div>
+
+              <!-- Items -->
+              <div
+                v-else
+                v-for="notification in notifications"
+                :key="notification.id"
+                class="group relative transition-all duration-300"
+                :class="notification.is_read
+                  ? 'rounded-lg bg-surface-container-lowest hover:bg-surface-container-low'
+                  : 'rounded-r-lg rounded-l-md border-l-4 border-primary bg-surface-container-low shadow-[0_10px_30px_rgba(246,128,255,0.05)] hover:bg-surface-container'"
+              >
+                <div class="flex flex-col gap-4 p-4 sm:p-5 md:flex-row md:items-start md:justify-between md:p-6">
+                  <div class="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
+                    <img
+                      :src="getActorAvatar(notification)"
+                      :alt="notification.actor?.name || 'Live actor'"
+                      class="h-10 w-10 shrink-0 rounded-full border border-primary/20 object-cover sm:h-12 sm:w-12"
+                    />
+
+                    <div class="min-w-0 flex-1">
+                      <div class="mb-1 flex flex-wrap items-center gap-2">
+                        <span
+                          class="text-[10px] font-bold uppercase tracking-widest sm:text-xs"
+                          :class="notification.is_read ? 'text-on-surface-variant' : 'text-primary'"
+                        >
+                          {{ notification.is_read ? 'Live Update' : 'New Live' }}
+                        </span>
+
+                        <span class="h-1 w-1 rounded-full bg-outline-variant"></span>
+
+                        <span class="text-[11px] text-on-surface-variant sm:text-xs">
+                          {{ formatNotificationDate(notification.created_at) }}
+                        </span>
+                      </div>
+
+                      <RouterLink
+                        v-if="notification.stream?.id"
+                        :to="`/streams/${notification.stream.id}`"
+                        class="block min-w-0"
+                      >
+                        <p
+                          class="break-words text-base leading-relaxed transition-colors sm:text-lg"
+                          :class="notification.is_read
+                            ? 'font-normal text-on-surface-variant hover:text-on-surface'
+                            : 'font-medium text-on-surface hover:text-primary'"
+                        >
+                          <span class="font-bold">
+                            {{ notification.actor?.name || 'Someone' }}
+                          </span>
+                          is live now —
+                          <span class="underline decoration-primary/40 underline-offset-4">
+                            {{ notification.stream?.title || 'Open stream' }}
+                          </span>
+                        </p>
+                      </RouterLink>
+
+                      <p
+                        v-else
+                        class="break-words text-base leading-relaxed sm:text-lg"
+                        :class="notification.is_read
+                          ? 'font-normal text-on-surface-variant'
+                          : 'font-medium text-on-surface'"
+                      >
+                        {{ notification.title || notification.content }}
+                      </p>
+
+                      <p class="mt-2 break-words text-sm text-on-surface-variant">
+                        {{ notification.content }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    v-if="!notification.is_read"
+                    type="button"
+                    :disabled="markOneLoadingId === notification.id"
+                    class="w-full shrink-0 rounded-full bg-primary/10 px-4 py-2 text-xs font-bold text-on-surface transition-all duration-300 hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto md:translate-x-2 md:group-hover:translate-x-0"
+                    @click="markOneAsRead(notification.id)"
+                  >
+                    <span class="flex items-center justify-center gap-2">
+                      <span class="material-symbols-outlined text-sm">done_all</span>
+                      {{ markOneLoadingId === notification.id ? 'Loading...' : 'Mark as read' }}
+                    </span>
+                  </button>
+                </div>
+              </div>
             </div>
-          </footer>
+
+            <!-- Pagination -->
+            <footer
+              v-if="!loading && meta.last_page > 1"
+              class="mt-10 flex flex-col gap-4 sm:mt-12 md:mt-16 md:flex-row md:items-center md:justify-between"
+            >
+              <p class="text-center text-sm text-on-surface-variant md:text-left">
+                Showing {{ notifications.length }} of {{ meta.total }} notifications
+              </p>
+
+              <div class="flex flex-wrap items-center justify-center gap-2 md:justify-end">
+                <button
+                  type="button"
+                  class="rounded-full p-2 text-on-surface-variant transition-all hover:bg-surface-container-high hover:text-on-surface disabled:opacity-40"
+                  :disabled="meta.current_page === 1"
+                  @click="goToPage(meta.current_page - 1)"
+                >
+                  <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+
+                <div class="flex flex-wrap items-center justify-center gap-1">
+                  <button
+                    v-for="page in visiblePages"
+                    :key="page"
+                    type="button"
+                    class="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold transition-all sm:h-10 sm:w-10"
+                    :class="page === meta.current_page
+                      ? 'bg-primary text-on-primary'
+                      : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'"
+                    @click="goToPage(page)"
+                  >
+                    {{ page }}
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  class="rounded-full p-2 text-on-surface-variant transition-all hover:bg-surface-container-high hover:text-on-surface disabled:opacity-40"
+                  :disabled="meta.current_page === meta.last_page"
+                  @click="goToPage(meta.current_page + 1)"
+                >
+                  <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+              </div>
+            </footer>
+          </div>
         </main>
       </div>
     </div>

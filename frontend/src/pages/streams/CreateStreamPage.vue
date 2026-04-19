@@ -1,47 +1,53 @@
 <template>
   <div class="dark">
     <div class="min-h-screen bg-background text-on-background selection:bg-primary/30">
-      <TopNavbar @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed" />
+      <TopNavbar @toggle-sidebar="handleSidebarToggle" />
 
       <div class="flex min-h-screen">
-        <AppSidebar :collapsed="sidebarCollapsed" />
+        <AppSidebar
+          :collapsed="sidebarCollapsed"
+          :mobile-open="mobileSidebarOpen"
+          @close="mobileSidebarOpen = false"
+        />
 
         <main
           :class="[
-            'min-h-screen flex-1 pb-24 pt-2 transition-all duration-300',
+            'min-w-0 min-h-screen flex-1 pb-24 pt-2 transition-all duration-300',
             sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
           ]"
         >
-          <div class="mx-auto max-w-6xl px-6 py-12">
-            <div class="relative mb-12">
+          <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+            <div class="relative mb-10 lg:mb-12">
               <div class="absolute -left-12 -top-12 h-64 w-64 rounded-full bg-primary/10 blur-[100px]"></div>
 
-              <h1 class="relative z-10 mb-2 font-headline text-5xl font-black tracking-tight">
+              <h1 class="relative z-10 mb-2 font-headline text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
                 Start Your
                 <span class="bg-gradient-to-r from-primary via-secondary to-tertiary bg-clip-text text-transparent">
                   Broadcast
                 </span>
               </h1>
 
-              <p class="max-w-xl text-lg font-medium text-on-surface-variant">
+              <p class="max-w-xl text-base font-medium text-on-surface-variant lg:text-lg">
                 Configure your stream details before going live to your audience.
               </p>
             </div>
 
             <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
               <div class="space-y-8 lg:col-span-2">
-                <section class="rounded-lg bg-surface-container p-8 shadow-xl">
+                <section class="rounded-lg bg-surface-container p-5 shadow-xl sm:p-6 lg:p-8">
                   <form class="space-y-6" @submit.prevent="handleCreateStream">
                     <div class="space-y-2">
                       <label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
                         Stream Title
                       </label>
+
                       <input
                         v-model="form.title"
                         type="text"
                         placeholder="e.g., Late Night Cyberpunk Sessions"
-                        class="w-full rounded-xl border-none bg-surface-container-low px-6 py-4 text-lg font-semibold text-on-surface placeholder:text-zinc-700 transition-all focus:ring-2 focus:ring-primary/50"
+                        class="w-full rounded-xl border-none bg-surface-container-low px-4 py-4 text-base font-semibold text-on-surface placeholder:text-zinc-700 transition-all focus:ring-2 focus:ring-primary/50 sm:px-6 sm:text-lg"
                       />
+
                       <p v-if="errors.title" class="text-sm text-error">
                         {{ errors.title[0] }}
                       </p>
@@ -51,26 +57,28 @@
                       <label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
                         Description
                       </label>
+
                       <textarea
                         v-model="form.description"
                         rows="5"
                         placeholder="Tell your viewers what's happening tonight..."
-                        class="w-full resize-none rounded-xl border-none bg-surface-container-low px-6 py-4 text-on-surface placeholder:text-zinc-700 transition-all focus:ring-2 focus:ring-primary/50"
+                        class="w-full resize-none rounded-xl border-none bg-surface-container-low px-4 py-4 text-on-surface placeholder:text-zinc-700 transition-all focus:ring-2 focus:ring-primary/50 sm:px-6"
                       ></textarea>
+
                       <p v-if="errors.description" class="text-sm text-error">
                         {{ errors.description[0] }}
                       </p>
                     </div>
 
                     <div class="space-y-4">
-                      <div class="flex items-center justify-between">
+                      <div class="flex items-center justify-between gap-3">
                         <label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
                           Categories
                         </label>
 
                         <button
                           type="button"
-                          class="text-xs font-bold text-primary transition hover:text-primary-dim"
+                          class="shrink-0 text-xs font-bold text-primary transition hover:text-primary-dim"
                           @click="loadCategories"
                         >
                           Refresh
@@ -149,7 +157,7 @@
                       <button
                         type="submit"
                         :disabled="createLoading"
-                        class="flex w-full items-center justify-center gap-3 rounded-full bg-gradient-to-br from-primary to-secondary py-6 text-lg font-black uppercase tracking-tighter text-on-primary-fixed shadow-[0_0_40px_rgba(246,128,255,0.4)] transition-all hover:scale-[1.02] hover:shadow-[0_0_60px_rgba(246,128,255,0.6)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                        class="flex w-full items-center justify-center gap-3 rounded-full bg-gradient-to-br from-primary to-secondary py-5 text-base font-black uppercase tracking-tighter text-on-primary-fixed shadow-[0_0_40px_rgba(246,128,255,0.4)] transition-all hover:scale-[1.02] hover:shadow-[0_0_60px_rgba(246,128,255,0.6)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:py-6 sm:text-lg"
                       >
                         <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">
                           sensors
@@ -175,19 +183,21 @@
                     alt="Streaming setup preview"
                     class="h-full w-full object-cover grayscale brightness-50 transition-all duration-700"
                   />
+
                   <div class="absolute inset-0 flex flex-col items-center justify-center bg-black/60 px-6 text-center backdrop-blur-[2px]">
                     <span class="material-symbols-outlined mb-2 text-4xl text-primary">live_tv</span>
                     <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
                       Stream Setup Preview
                     </span>
+
                     <p class="mt-3 max-w-xs text-sm text-on-surface-variant">
                       Your stream will start with the title, description, and categories you choose here.
                     </p>
                   </div>
                 </section>
 
-                <section class="rounded-lg bg-surface-container p-6">
-                  <h3 class="mb-3 font-headline text-xl font-bold text-on-surface">
+                <section class="rounded-lg bg-surface-container p-5 sm:p-6">
+                  <h3 class="mb-3 font-headline text-lg font-bold text-on-surface sm:text-xl">
                     Before You Go Live
                   </h3>
 
@@ -207,7 +217,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import api from '@/services/api'
 import TopNavbar from '@/components/layout/TopNavbar.vue'
@@ -216,6 +226,8 @@ import AppSidebar from '@/components/layout/AppSidebar.vue'
 const router = useRouter()
 
 const sidebarCollapsed = ref(false)
+const mobileSidebarOpen = ref(false)
+
 const categories = ref([])
 const categoriesLoading = ref(false)
 const createLoading = ref(false)
@@ -231,24 +243,33 @@ const form = reactive({
 })
 
 const normalizeCategories = (payload) => {
-  if (Array.isArray(payload)) {
-    return payload
-  }
-
-  if (Array.isArray(payload?.data)) {
-    return payload.data
-  }
-
-  if (Array.isArray(payload?.categories)) {
-    return payload.categories
-  }
-
-  if (Array.isArray(payload?.data?.categories)) {
-    return payload.data.categories
-  }
-
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.data)) return payload.data
+  if (Array.isArray(payload?.categories)) return payload.categories
+  if (Array.isArray(payload?.data?.categories)) return payload.data.categories
   return []
 }
+
+const handleSidebarToggle = () => {
+  if (window.innerWidth < 768) {
+    mobileSidebarOpen.value = !mobileSidebarOpen.value
+    return
+  }
+
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+const handleResize = () => {
+  if (window.innerWidth >= 768) {
+    mobileSidebarOpen.value = false
+  }
+}
+
+watch(mobileSidebarOpen, (isOpen) => {
+  if (window.innerWidth < 768) {
+    document.body.style.overflow = isOpen ? 'hidden' : ''
+  }
+})
 
 const loadCategories = async () => {
   categoriesLoading.value = true
@@ -337,7 +358,14 @@ const handleCreateStream = async () => {
 }
 
 onMounted(() => {
+  handleResize()
+  window.addEventListener('resize', handleResize)
   loadCategories()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  document.body.style.overflow = ''
 })
 </script>
 

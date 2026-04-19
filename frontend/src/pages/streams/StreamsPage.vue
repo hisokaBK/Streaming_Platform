@@ -1,36 +1,38 @@
 <template>
   <div class="dark">
     <div class="min-h-screen bg-background text-on-background antialiased selection:bg-primary selection:text-on-primary">
-      <TopNavbar @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed" />
+      <TopNavbar @toggle-sidebar="handleSidebarToggle" />
 
       <div class="flex min-h-screen">
-        <AppSidebar :collapsed="sidebarCollapsed" />
+        <AppSidebar
+          :collapsed="sidebarCollapsed"
+          :mobile-open="mobileSidebarOpen"
+          @close="mobileSidebarOpen = false"
+        />
 
         <main
           :class="[
-            'min-h-screen flex-1 px-8 pb-32 pt-3 transition-all duration-300',
+            'min-w-0 flex-1 px-4 pb-20 pt-4 transition-all duration-300 sm:px-6 lg:px-8',
             sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
           ]"
         >
           <div class="mx-auto max-w-7xl">
-            <!-- Page Header -->
             <div class="mb-12 flex flex-col justify-between gap-8 md:flex-row md:items-end">
               <div>
-                <h1 class="neon-magenta-glow mb-4 font-headline text-5xl font-black tracking-tighter md:text-6xl">
+                <h1 class="neon-magenta-glow mb-4 font-headline text-4xl font-black tracking-tighter sm:text-5xl md:text-6xl">
                   Live Now
                 </h1>
-                <p class="max-w-lg font-body text-on-surface-variant">
+                <p class="max-w-lg font-body text-sm text-on-surface-variant sm:text-base">
                   Discover the hottest streamers across the globe in real-time. Exclusive content, immersive experiences.
                 </p>
               </div>
             </div>
 
-            <!-- Categories -->
             <div class="no-scrollbar mb-10 overflow-x-auto pb-2">
-              <div class="flex w-max items-center gap-4">
+              <div class="flex w-max items-center gap-3 sm:gap-4">
                 <button
                   type="button"
-                  class="rounded-full border px-5 py-2.5 text-sm font-semibold transition-all"
+                  class="rounded-full border px-4 py-2.5 text-sm font-semibold transition-all sm:px-5"
                   :class="selectedCategory === 'all'
                     ? 'border-primary/20 bg-primary/10 text-primary'
                     : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-bright'"
@@ -46,7 +48,7 @@
                   v-for="category in categories"
                   :key="category.id"
                   type="button"
-                  class="rounded-full px-5 py-2.5 text-sm font-semibold transition-all"
+                  class="rounded-full px-4 py-2.5 text-sm font-semibold transition-all sm:px-5"
                   :class="selectedCategory === category.id
                     ? 'border border-primary/20 bg-primary/10 text-primary'
                     : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-bright'"
@@ -60,7 +62,6 @@
               </div>
             </div>
 
-            <!-- Loading -->
             <div v-if="loading" class="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
               <div
                 v-for="n in 6"
@@ -83,10 +84,9 @@
               </div>
             </div>
 
-            <!-- Empty -->
             <div
               v-else-if="streams.length === 0"
-              class="rounded-3xl bg-surface-container-low p-12 text-center shadow-xl"
+              class="rounded-3xl bg-surface-container-low p-8 text-center shadow-xl sm:p-12"
             >
               <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <span class="material-symbols-outlined text-3xl">live_tv</span>
@@ -99,7 +99,6 @@
               </p>
             </div>
 
-            <!-- Stream Grid -->
             <div v-else class="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
               <RouterLink
                 v-for="stream in streams"
@@ -111,7 +110,7 @@
                   <div class="absolute inset-0 bg-gradient-to-br from-primary/20 to-tertiary/10"></div>
                   <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
 
-                  <div class="absolute left-4 top-4 flex items-center gap-2">
+                  <div class="absolute left-4 top-4 flex flex-wrap items-center gap-2">
                     <span
                       class="rounded px-3 py-1 text-[10px] font-black uppercase tracking-widest"
                       :class="stream.status === 'live'
@@ -164,7 +163,7 @@
                       </span>
                     </div>
 
-                    <div class="flex items-center gap-4 text-xs font-medium text-zinc-500">
+                    <div class="flex flex-wrap items-center gap-3 text-xs font-medium text-zinc-500 sm:gap-4">
                       <span class="flex items-center gap-1">
                         <span class="material-symbols-outlined text-sm">forum</span>
                         {{ stream.comments_count || 0 }}
@@ -175,7 +174,7 @@
                         {{ stream.reactions_count || 0 }}
                       </span>
 
-                      <span class="ml-auto">
+                      <span class="sm:ml-auto">
                         {{ formatStartedAt(stream.started_at, stream.created_at) }}
                       </span>
                     </div>
@@ -184,9 +183,8 @@
               </RouterLink>
             </div>
 
-            <!-- Pagination -->
-            <div v-if="meta.last_page > 1" class="mt-20 flex justify-center">
-              <nav class="flex items-center gap-2 rounded-full bg-surface-container-low p-2 shadow-lg">
+            <div v-if="meta.last_page > 1" class="mt-16 flex justify-center sm:mt-20">
+              <nav class="flex max-w-full flex-wrap items-center justify-center gap-2 rounded-3xl bg-surface-container-low p-2 shadow-lg">
                 <button
                   type="button"
                   class="flex h-10 w-10 items-center justify-center rounded-full text-on-surface-variant transition-all hover:bg-surface-bright disabled:opacity-40"
@@ -211,7 +209,7 @@
 
                 <button
                   type="button"
-                  class="flex h-10 items-center justify-center rounded-full px-6 text-xs font-bold uppercase tracking-widest text-on-surface-variant transition-all hover:bg-surface-bright hover:text-white disabled:opacity-40"
+                  class="flex h-10 items-center justify-center rounded-full px-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant transition-all hover:bg-surface-bright hover:text-white disabled:opacity-40 sm:px-6"
                   :disabled="meta.current_page === meta.last_page"
                   @click="goToPage(meta.current_page + 1)"
                 >
@@ -228,13 +226,14 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import api from '@/services/api'
 import TopNavbar from '@/components/layout/TopNavbar.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 
 const sidebarCollapsed = ref(false)
+const mobileSidebarOpen = ref(false)
 
 const loading = ref(false)
 const streams = ref([])
@@ -247,6 +246,15 @@ const meta = ref({
   per_page: 10,
   total: 0,
 })
+
+const normalizeCollection = (payload) => {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.data)) return payload.data
+  if (Array.isArray(payload?.data?.data)) return payload.data.data
+  if (Array.isArray(payload?.data?.categories)) return payload.data.categories
+  if (Array.isArray(payload?.categories)) return payload.categories
+  return []
+}
 
 const buildStorageUrl = (path) => {
   if (!path) return null
@@ -262,18 +270,35 @@ const getAvatar = (avatar, name = 'User') => {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=111111&color=ffffff&size=256`
 }
 
-const extractCategoriesFromStreams = (streamsList) => {
-  const map = new Map()
+const handleSidebarToggle = () => {
+  if (window.innerWidth < 768) {
+    mobileSidebarOpen.value = !mobileSidebarOpen.value
+    return
+  }
 
-  streamsList.forEach((stream) => {
-    ;(stream.categories || []).forEach((category) => {
-      if (!map.has(category.id)) {
-        map.set(category.id, category)
-      }
-    })
-  })
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
 
-  return Array.from(map.values())
+const handleResize = () => {
+  if (window.innerWidth >= 768) {
+    mobileSidebarOpen.value = false
+  }
+}
+
+watch(mobileSidebarOpen, (isOpen) => {
+  if (window.innerWidth < 768) {
+    document.body.style.overflow = isOpen ? 'hidden' : ''
+  }
+})
+
+const loadCategories = async () => {
+  try {
+    const response = await api.get('/categories')
+    categories.value = normalizeCollection(response.data)
+  } catch (error) {
+    console.error('Failed to load categories', error)
+    categories.value = []
+  }
 }
 
 const loadStreams = async (page = 1) => {
@@ -294,16 +319,6 @@ const loadStreams = async (page = 1) => {
       last_page: 1,
       per_page: 10,
       total: 0,
-    }
-
-    const extracted = extractCategoriesFromStreams(streams.value)
-
-    if (page === 1 && categories.value.length === 0) {
-      categories.value = extracted
-    } else {
-      const merged = new Map(categories.value.map((item) => [item.id, item]))
-      extracted.forEach((item) => merged.set(item.id, item))
-      categories.value = Array.from(merged.values())
     }
   } catch (error) {
     console.error('Failed to load streams', error)
@@ -346,8 +361,19 @@ const visiblePages = computed(() => {
   return pages
 })
 
-onMounted(() => {
-  loadStreams()
+onMounted(async () => {
+  handleResize()
+  window.addEventListener('resize', handleResize)
+
+  await Promise.all([
+    loadCategories(),
+    loadStreams(),
+  ])
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  document.body.style.overflow = ''
 })
 </script>
 

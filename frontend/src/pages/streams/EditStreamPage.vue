@@ -1,25 +1,31 @@
 <template>
   <div class="dark">
     <div class="min-h-screen bg-background font-body text-on-surface selection:bg-primary/30">
-      <TopNavbar @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed" />
+      <TopNavbar @toggle-sidebar="handleSidebarToggle" />
 
       <div class="flex min-h-screen">
-        <AppSidebar :collapsed="sidebarCollapsed" />
+        <AppSidebar
+          :collapsed="sidebarCollapsed"
+          :mobile-open="mobileSidebarOpen"
+          @close="mobileSidebarOpen = false"
+        />
 
         <main
           :class="[
-            'min-h-screen flex-1 pb-24 pt-20 transition-all duration-300',
+            'min-w-0 min-h-screen flex-1 pb-24 pt-20 transition-all duration-300',
             sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
           ]"
         >
-          <div class="mx-auto max-w-6xl p-8 lg:p-12">
+          <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
             <div v-if="pageLoading" class="space-y-6">
               <div class="h-12 w-72 animate-pulse rounded bg-surface-container-high"></div>
               <div class="h-6 w-full animate-pulse rounded bg-surface-container-high"></div>
+
               <div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
                 <div class="space-y-6 lg:col-span-8">
                   <div class="h-96 animate-pulse rounded-lg bg-surface-container-high"></div>
                 </div>
+
                 <div class="space-y-6 lg:col-span-4">
                   <div class="h-80 animate-pulse rounded-lg bg-surface-container-high"></div>
                 </div>
@@ -27,29 +33,32 @@
             </div>
 
             <template v-else>
-              <div class="mb-12">
-                <h1 class="font-headline text-4xl font-black tracking-tight text-on-surface lg:text-5xl">
+              <div class="mb-10 lg:mb-12">
+                <h1 class="font-headline text-3xl font-black tracking-tight text-on-surface sm:text-4xl lg:text-5xl">
                   Stream Settings
                 </h1>
-                <p class="max-w-2xl text-on-surface-variant">
+
+                <p class="max-w-2xl text-sm text-on-surface-variant sm:text-base">
                   Update your stream details and categories. Changes take effect immediately on your live feed.
                 </p>
               </div>
 
               <div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
                 <div class="space-y-8 lg:col-span-8">
-                  <section class="rounded-lg border border-outline-variant/15 bg-surface-container p-8 lg:p-10">
+                  <section class="rounded-lg border border-outline-variant/15 bg-surface-container p-5 sm:p-6 lg:p-8 xl:p-10">
                     <form class="space-y-8" @submit.prevent="handleUpdateStream">
                       <div>
                         <label class="mb-4 block font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-fuchsia-500">
                           Stream Title
                         </label>
+
                         <input
                           v-model="form.title"
                           type="text"
                           class="w-full rounded-lg border-none bg-surface-container-low p-4 font-medium text-on-surface outline-none ring-1 ring-white/5 transition-all focus:bg-surface-container-high focus:ring-primary/50"
                           placeholder="Enter stream title"
                         />
+
                         <p v-if="errors.title" class="mt-2 text-sm text-error">
                           {{ errors.title[0] }}
                         </p>
@@ -59,12 +68,14 @@
                         <label class="mb-4 block font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-fuchsia-500">
                           Description
                         </label>
+
                         <textarea
                           v-model="form.description"
                           rows="6"
                           class="w-full rounded-lg border-none bg-surface-container-low p-4 font-medium leading-relaxed text-on-surface outline-none ring-1 ring-white/5 transition-all focus:bg-surface-container-high focus:ring-primary/50"
                           placeholder="Enter stream description"
                         ></textarea>
+
                         <p v-if="errors.description" class="mt-2 text-sm text-error">
                           {{ errors.description[0] }}
                         </p>
@@ -139,7 +150,7 @@
 
                 <div class="space-y-8 lg:col-span-4">
                   <div class="overflow-hidden rounded-lg border border-outline-variant/15 bg-surface-container">
-                    <div class="flex items-center justify-between border-b border-outline-variant/15 bg-surface-container-high/50 p-6">
+                    <div class="flex items-center justify-between border-b border-outline-variant/15 bg-surface-container-high/50 p-4 sm:p-6">
                       <h3 class="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">
                         Stream Status
                       </h3>
@@ -154,6 +165,7 @@
                           class="h-2 w-2 rounded-full"
                           :class="stream?.status === 'live' ? 'bg-tertiary' : 'bg-zinc-500'"
                         ></span>
+
                         <span
                           class="text-[10px] font-bold uppercase"
                           :class="stream?.status === 'live' ? 'text-tertiary' : 'text-zinc-400'"
@@ -163,13 +175,14 @@
                       </div>
                     </div>
 
-                    <div class="space-y-6 p-6">
+                    <div class="space-y-6 p-4 sm:p-6">
                       <div class="group relative aspect-video w-full overflow-hidden rounded-lg bg-black">
                         <img
                           alt="Stream Preview"
                           class="h-full w-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-110"
                           src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop"
                         />
+
                         <div class="absolute inset-0 flex items-center justify-center">
                           <span class="material-symbols-outlined text-4xl text-white/50 transition-colors group-hover:text-primary">
                             play_circle
@@ -178,9 +191,9 @@
                       </div>
 
                       <div class="space-y-4">
-                        <div class="flex justify-between text-xs">
+                        <div class="flex justify-between gap-4 text-xs">
                           <span class="text-on-surface-variant">Started At</span>
-                          <span class="font-mono text-on-surface">{{ formatDateTime(stream?.started_at) }}</span>
+                          <span class="truncate text-right font-mono text-on-surface">{{ formatDateTime(stream?.started_at) }}</span>
                         </div>
 
                         <div class="flex justify-between text-xs">
@@ -215,7 +228,7 @@
                     <button
                       type="button"
                       :disabled="endLoading || stream?.status === 'ended'"
-                      class="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-error/30 py-4 font-bold tracking-tight text-error transition-all hover:bg-error/10 hover:border-error disabled:cursor-not-allowed disabled:opacity-50"
+                      class="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-error/30 py-4 font-bold tracking-tight text-error transition-all hover:border-error hover:bg-error/10 disabled:cursor-not-allowed disabled:opacity-50"
                       @click="handleEndStream"
                     >
                       <span class="material-symbols-outlined">power_settings_new</span>
@@ -227,9 +240,10 @@
 
               <div
                 v-if="stream?.status === 'ended'"
-                class="mt-12 flex items-center gap-6 rounded-lg border-l-4 border-zinc-500 bg-surface-container-highest p-8"
+                class="mt-10 flex flex-col gap-4 rounded-lg border-l-4 border-zinc-500 bg-surface-container-highest p-6 sm:mt-12 sm:flex-row sm:items-center sm:gap-6 sm:p-8"
               >
                 <span class="material-symbols-outlined text-4xl text-zinc-500">lock</span>
+
                 <div>
                   <h3 class="text-xl font-bold">Stream Ended</h3>
                   <p class="text-sm text-on-surface-variant">
@@ -246,7 +260,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
 import TopNavbar from '@/components/layout/TopNavbar.vue'
@@ -256,6 +270,8 @@ const route = useRoute()
 const router = useRouter()
 
 const sidebarCollapsed = ref(false)
+const mobileSidebarOpen = ref(false)
+
 const categories = ref([])
 const stream = ref(null)
 
@@ -286,6 +302,27 @@ const selectedCategoriesPreview = computed(() => {
   return categories.value.filter((category) =>
     form.category_ids.includes(Number(category.id))
   )
+})
+
+const handleSidebarToggle = () => {
+  if (window.innerWidth < 768) {
+    mobileSidebarOpen.value = !mobileSidebarOpen.value
+    return
+  }
+
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+const handleResize = () => {
+  if (window.innerWidth >= 768) {
+    mobileSidebarOpen.value = false
+  }
+}
+
+watch(mobileSidebarOpen, (isOpen) => {
+  if (window.innerWidth < 768) {
+    document.body.style.overflow = isOpen ? 'hidden' : ''
+  }
 })
 
 const loadCategories = async () => {
@@ -413,7 +450,15 @@ const handleEndStream = async () => {
 }
 
 onMounted(async () => {
+  handleResize()
+  window.addEventListener('resize', handleResize)
+
   await Promise.all([loadCategories(), loadStream()])
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  document.body.style.overflow = ''
 })
 </script>
 

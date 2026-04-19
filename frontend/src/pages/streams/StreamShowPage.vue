@@ -1,19 +1,23 @@
 <template>
   <div class="dark">
     <div class="min-h-screen bg-background font-body text-on-surface selection:bg-primary/30">
-      <TopNavbar @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed" />
+      <TopNavbar @toggle-sidebar="handleSidebarToggle" />
 
       <div class="flex min-h-screen">
-        <AppSidebar :collapsed="sidebarCollapsed" />
+        <AppSidebar
+          :collapsed="sidebarCollapsed"
+          :mobile-open="mobileSidebarOpen"
+          @close="mobileSidebarOpen = false"
+        />
 
         <main
           :class="[
-            'flex min-h-screen flex-1 flex-col pt-0 transition-all duration-300',
+            'min-w-0 flex min-h-screen flex-1 flex-col pt-0 transition-all duration-300',
             sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
           ]"
         >
-          <div class="flex min-h-screen flex-col lg:flex-row">
-            <section class="flex flex-1 flex-col gap-6 p-4 lg:p-6">
+          <div class="flex min-h-screen flex-col xl:flex-row">
+            <section class="flex min-w-0 flex-1 flex-col gap-6 p-4 sm:p-5 lg:p-6">
               <div
                 v-if="loading"
                 class="relative aspect-video w-full animate-pulse overflow-hidden rounded-lg bg-surface-container-lowest"
@@ -32,14 +36,14 @@
                       :style="playerBackgroundStyle"
                     ></div>
 
-                    <div class="relative z-10 flex flex-col items-center gap-4">
+                    <div class="relative z-10 flex flex-col items-center gap-4 px-4 text-center">
                       <div
                         v-if="stream.status === 'live'"
                         class="h-16 w-16 animate-spin rounded-full border-4 border-primary/20 border-t-primary"
                       ></div>
 
                       <span
-                        class="font-headline text-lg font-bold tracking-widest"
+                        class="font-headline text-base font-bold tracking-widest sm:text-lg"
                         :class="stream.status === 'live' ? 'text-primary' : 'text-zinc-300'"
                       >
                         {{ stream.status === 'live' ? 'CONNECTING...' : 'STREAM ENDED' }}
@@ -47,9 +51,9 @@
                     </div>
                   </div>
 
-                  <div class="absolute left-6 top-6 flex gap-3">
+                  <div class="absolute left-3 top-3 flex flex-wrap gap-2 sm:left-6 sm:top-6 sm:gap-3">
                     <div
-                      class="flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold"
+                      class="flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-bold sm:text-xs"
                       :class="stream.status === 'live'
                         ? 'animate-pulse bg-tertiary-container text-on-tertiary-container'
                         : 'bg-surface-container-high text-on-surface-variant'"
@@ -61,7 +65,7 @@
                       {{ stream.status.toUpperCase() }}
                     </div>
 
-                    <div class="flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-xs font-bold text-white backdrop-blur-md">
+                    <div class="flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-[10px] font-bold text-white backdrop-blur-md sm:text-xs">
                       <span class="material-symbols-outlined text-sm">visibility</span>
                       {{ formatViewers(stream.current_viewers) }}
                     </div>
@@ -70,7 +74,7 @@
               </div>
 
               <div v-if="stream" class="space-y-4">
-                <h1 class="font-headline text-2xl font-black tracking-tight text-on-surface md:text-3xl">
+                <h1 class="font-headline text-2xl font-black tracking-tight text-on-surface sm:text-3xl">
                   {{ stream.title }}
                 </h1>
 
@@ -104,25 +108,25 @@
 
               <div
                 v-if="stream"
-                class="relative flex flex-col justify-between gap-6 rounded-3xl border border-white/5 bg-surface-container p-6 lg:flex-row lg:items-center"
+                class="relative flex flex-col justify-between gap-6 rounded-3xl border border-white/5 bg-surface-container p-4 sm:p-6 lg:flex-row lg:items-center"
               >
-                <div class="flex items-center gap-4">
+                <div class="flex min-w-0 items-center gap-4">
                   <RouterLink
                     :to="`/profile/${stream.user?.id}`"
-                    class="block"
+                    class="block shrink-0"
                   >
                     <img
                       :src="getAvatar(stream.user?.avatar, stream.user?.name)"
                       :alt="stream.user?.name || 'Streamer avatar'"
-                      class="h-16 w-16 rounded-2xl object-cover transition hover:opacity-90"
+                      class="h-14 w-14 rounded-2xl object-cover transition hover:opacity-90 sm:h-16 sm:w-16"
                     />
                   </RouterLink>
 
-                  <div>
+                  <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-3">
                       <RouterLink
                         :to="`/profile/${stream.user?.id}`"
-                        class="font-headline text-lg font-bold transition hover:text-primary"
+                        class="truncate font-headline text-base font-bold transition hover:text-primary sm:text-lg"
                       >
                         {{ stream.user?.name || 'Unknown streamer' }}
                       </RouterLink>
@@ -141,16 +145,16 @@
                       </button>
                     </div>
 
-                    <p class="text-sm text-on-surface-variant">
+                    <p class="truncate text-sm text-on-surface-variant">
                       {{ stream.user?.email || 'No email available' }}
                     </p>
                   </div>
                 </div>
 
-                <div class="relative flex flex-wrap items-center gap-4">
+                <div class="relative flex flex-wrap items-center gap-3 sm:gap-4">
                   <button
                     type="button"
-                    class="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-secondary px-6 py-3 font-bold text-on-primary-fixed transition-all hover:shadow-[0_0_20px_rgba(246,128,255,0.4)] active:scale-95"
+                    class="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-secondary px-5 py-3 font-bold text-on-primary-fixed transition-all hover:shadow-[0_0_20px_rgba(246,128,255,0.4)] active:scale-95 sm:px-6"
                     @click="toggleReactionsMenu"
                   >
                     <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">
@@ -159,21 +163,21 @@
                     <span>React</span>
                   </button>
 
-                  <div class="flex items-center gap-2 rounded-full bg-surface-container-high px-5 py-3 text-sm font-bold text-on-surface-variant">
+                  <div class="flex items-center gap-2 rounded-full bg-surface-container-high px-4 py-3 text-sm font-bold text-on-surface-variant sm:px-5">
                     <span class="material-symbols-outlined text-primary">favorite</span>
                     <span>{{ formatCompact(totalReactions) }}</span>
                   </div>
 
                   <div
                     v-if="showReactionsMenu"
-                    class="absolute bottom-full right-0 z-30 mb-3 rounded-3xl border border-white/10 bg-surface-container p-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]"
+                    class="absolute bottom-full right-0 z-30 mb-3 max-w-[calc(100vw-2rem)] rounded-3xl border border-white/10 bg-surface-container p-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]"
                   >
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
                       <button
                         v-for="item in reactionOptions"
                         :key="item.type"
                         type="button"
-                        class="group flex min-w-[74px] flex-col items-center rounded-2xl px-3 py-3 transition hover:bg-surface-container-high active:scale-95 disabled:opacity-60"
+                        class="group flex min-w-[68px] flex-col items-center rounded-2xl px-3 py-3 transition hover:bg-surface-container-high active:scale-95 disabled:opacity-60"
                         :disabled="reactionLoading"
                         @click="submitReaction(item.type)"
                       >
@@ -191,7 +195,7 @@
 
               <div
                 v-if="!loading && !stream"
-                class="rounded-3xl bg-surface-container-low p-12 text-center text-on-surface-variant"
+                class="rounded-3xl bg-surface-container-low p-8 text-center text-on-surface-variant sm:p-12"
               >
                 Stream not found.
               </div>
@@ -199,10 +203,14 @@
 
             <aside
               v-if="showChat"
-              class="sticky top-20 flex h-[calc(100vh-5rem)] w-full flex-col border-l border-white/5 bg-surface-container-low/50 backdrop-blur-xl lg:w-[420px]"
+              :class="[
+                'border-white/5 bg-surface-container-low/50 backdrop-blur-xl',
+                'xl:sticky xl:top-20 xl:h-[calc(100vh-5rem)] xl:w-[420px] xl:border-l',
+                'fixed inset-x-0 bottom-0 top-[72px] z-40 flex flex-col border-t'
+              ]"
             >
-              <div class="flex items-center justify-between border-b border-white/5 p-6">
-                <h2 class="font-headline text-xl font-black tracking-tight">
+              <div class="flex items-center justify-between border-b border-white/5 p-4 sm:p-6">
+                <h2 class="font-headline text-lg font-black tracking-tight sm:text-xl">
                   LIVE CHAT
                 </h2>
 
@@ -216,7 +224,7 @@
                 </div>
               </div>
 
-              <div class="hide-scrollbar flex-1 space-y-6 overflow-y-auto p-6">
+              <div class="hide-scrollbar flex-1 space-y-6 overflow-y-auto p-4 sm:p-6">
                 <div
                   v-if="displayedComments.length === 0"
                   class="rounded-lg bg-surface-container p-6 text-center text-on-surface-variant"
@@ -232,7 +240,7 @@
                 >
                   <RouterLink
                     :to="`/profile/${comment.user?.id}`"
-                    class="block"
+                    class="block shrink-0"
                   >
                     <img
                       :src="getAvatar(comment.user?.avatar, comment.user?.name)"
@@ -241,27 +249,27 @@
                     />
                   </RouterLink>
 
-                  <div class="flex-1 space-y-1">
-                    <div class="flex items-center justify-between">
+                  <div class="min-w-0 flex-1 space-y-1">
+                    <div class="flex items-center justify-between gap-3">
                       <RouterLink
                         :to="`/profile/${comment.user?.id}`"
-                        class="text-sm font-bold text-secondary transition hover:text-primary"
+                        class="truncate text-sm font-bold text-secondary transition hover:text-primary"
                       >
                         {{ comment.user?.name || 'Unknown user' }}
                       </RouterLink>
-                      <span class="text-[10px] font-bold uppercase text-on-surface-variant">
+                      <span class="shrink-0 text-[10px] font-bold uppercase text-on-surface-variant">
                         {{ formatCommentTime(comment.created_at) }}
                       </span>
                     </div>
 
-                    <p class="text-sm leading-relaxed text-on-surface-variant">
+                    <p class="break-words text-sm leading-relaxed text-on-surface-variant">
                       {{ comment.content }}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div class="space-y-4 border-t border-white/5 bg-surface-container p-6">
+              <div class="space-y-4 border-t border-white/5 bg-surface-container p-4 sm:p-6">
                 <p v-if="commentError" class="text-sm text-error">
                   {{ commentError }}
                 </p>
@@ -293,7 +301,7 @@
         <button
           v-if="!showChat"
           type="button"
-          class="fixed bottom-8 right-8 z-40 rounded-full bg-gradient-to-r from-primary to-secondary px-6 py-4 font-bold text-on-primary-fixed shadow-[0_10px_30px_rgba(246,128,255,0.35)] transition hover:scale-105 active:scale-95"
+          class="fixed bottom-6 right-4 z-40 rounded-full bg-gradient-to-r from-primary to-secondary px-5 py-3 text-sm font-bold text-on-primary-fixed shadow-[0_10px_30px_rgba(246,128,255,0.35)] transition hover:scale-105 active:scale-95 sm:bottom-8 sm:right-8 sm:px-6 sm:py-4 sm:text-base"
           @click="showChat = true"
         >
           Open Chat
@@ -304,7 +312,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import api from '@/services/api'
 import TopNavbar from '@/components/layout/TopNavbar.vue'
@@ -313,6 +321,9 @@ import AppSidebar from '@/components/layout/AppSidebar.vue'
 const route = useRoute()
 
 const sidebarCollapsed = ref(false)
+const mobileSidebarOpen = ref(false)
+const isMobileView = ref(false)
+
 const loading = ref(false)
 const reactionLoading = ref(false)
 const commentLoading = ref(false)
@@ -321,7 +332,7 @@ const followLoading = ref(false)
 const stream = ref(null)
 const showReactionsMenu = ref(false)
 const showDescription = ref(false)
-const showChat = ref(true)
+const showChat = ref(false)
 const commentError = ref('')
 const isFollowing = ref(false)
 const authUser = ref(null)
@@ -443,6 +454,32 @@ const formatCommentTime = (date) => {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
+const handleSidebarToggle = () => {
+  if (window.innerWidth < 768) {
+    mobileSidebarOpen.value = !mobileSidebarOpen.value
+    return
+  }
+
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+const handleResize = () => {
+  isMobileView.value = window.innerWidth < 1280
+
+  if (window.innerWidth >= 768) {
+    mobileSidebarOpen.value = false
+  }
+
+  if (window.innerWidth >= 1280) {
+    showChat.value = true
+  }
+}
+
+watch([mobileSidebarOpen, showChat, isMobileView], ([sidebarOpen, chatOpen, mobile]) => {
+  const lockScroll = sidebarOpen || (mobile && chatOpen)
+  document.body.style.overflow = lockScroll ? 'hidden' : ''
+})
+
 const toggleReactionsMenu = () => {
   showReactionsMenu.value = !showReactionsMenu.value
 }
@@ -558,8 +595,20 @@ const submitComment = async () => {
 
 onMounted(async () => {
   authUser.value = getStoredUser()
+  handleResize()
+  window.addEventListener('resize', handleResize)
+
+  if (window.innerWidth < 1280) {
+    showChat.value = false
+  }
+
   await loadStream()
   await loadFollowingState()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  document.body.style.overflow = ''
 })
 </script>
 

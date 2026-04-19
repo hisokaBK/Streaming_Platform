@@ -1,24 +1,24 @@
 <template>
   <div class="dark">
-    <div class="min-h-screen bg-background text-on-surface">
+    <div class="min-h-screen overflow-x-hidden bg-background text-on-surface">
       <TopNavbar @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed" />
 
-      <div class="flex h-[calc(100vh-80px)] pt-0">
+      <div class="flex min-h-[calc(100vh-80px)] pt-0">
         <AppSidebar :collapsed="sidebarCollapsed" />
 
         <main
           :class="[
-            'flex h-full flex-1 transition-all duration-300',
-            sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
+            'flex min-w-0 flex-1 transition-all duration-300',
+            sidebarCollapsed ? 'ml-20' : 'ml-64'
           ]"
         >
           <!-- Left: Conversations -->
-          <section class="flex w-full flex-col border-r border-outline-variant/10 bg-surface-container-lowest md:w-96">
-            <div class="p-6">
-              <div class="mb-4 flex items-center justify-between gap-3">
-                <h1 class="font-headline text-2xl font-bold">Messages</h1>
+          <section class="flex min-w-0 w-full flex-col border-r border-outline-variant/10 bg-surface-container-lowest md:w-80 lg:w-96">
+            <div class="p-4 sm:p-5 md:p-6">
+              <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h1 class="font-headline text-xl font-bold sm:text-2xl">Messages</h1>
 
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 self-start sm:self-auto">
                   <button
                     type="button"
                     class="rounded-full bg-surface-container-high px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-on-surface transition hover:bg-surface-bright"
@@ -45,17 +45,17 @@
                   v-model="search"
                   type="text"
                   placeholder="Search conversations..."
-                  class="w-full rounded-xl border-none bg-surface-container-low py-3 pl-10 text-sm text-white placeholder:text-on-surface-variant/50 focus:ring-1 focus:ring-primary/50"
+                  class="w-full rounded-xl border-none bg-surface-container-low py-3 pl-10 pr-4 text-sm text-white placeholder:text-on-surface-variant/50 focus:ring-1 focus:ring-primary/50"
                 />
               </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto px-2 pb-4 space-y-1">
+            <div class="flex-1 space-y-1 overflow-y-auto px-2 pb-4">
               <div
                 v-if="conversationsLoading"
                 v-for="n in 4"
                 :key="`conv-skeleton-${n}`"
-                class="flex items-center gap-4 p-4 opacity-40 animate-pulse"
+                class="flex animate-pulse items-center gap-4 p-4 opacity-40"
               >
                 <div class="h-12 w-12 rounded-full bg-surface-container-high"></div>
                 <div class="flex-1">
@@ -94,7 +94,7 @@
                 ></div>
 
                 <div class="flex items-center gap-4">
-                  <div class="relative">
+                  <div class="relative shrink-0">
                     <template v-if="getAvatarUrl(conversation.participant?.avatar)">
                       <img
                         :src="getAvatarUrl(conversation.participant?.avatar)"
@@ -141,7 +141,7 @@
                       </span>
 
                       <span
-                        class="text-[10px]"
+                        class="shrink-0 text-[10px]"
                         :class="conversation.has_unread ? 'text-primary' : 'text-on-surface-variant'"
                       >
                         {{ formatConversationTime(conversation.last_message?.created_at) }}
@@ -164,7 +164,7 @@
 
                       <div
                         v-if="conversation.unread_count > 0"
-                        class="flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-on-primary-fixed shadow-[0_0_8px_rgba(246,128,255,0.8)]"
+                        class="flex min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-on-primary-fixed shadow-[0_0_8px_rgba(246,128,255,0.8)]"
                       >
                         {{ conversation.unread_count }}
                       </div>
@@ -176,14 +176,14 @@
           </section>
 
           <!-- Right: Chat -->
-          <section class="hidden flex-1 flex-col bg-surface md:flex">
+          <section class="hidden min-w-0 flex-1 flex-col bg-surface md:flex">
             <template v-if="activeParticipant">
-              <div class="flex h-20 items-center justify-between bg-surface-container/30 px-8 backdrop-blur-md">
+              <div class="flex h-20 min-w-0 items-center justify-between bg-surface-container/30 px-4 backdrop-blur-md sm:px-6 lg:px-8">
                 <RouterLink
                   :to="`/profile/${activeParticipant.id}`"
-                  class="flex items-center gap-4 transition hover:opacity-90"
+                  class="flex min-w-0 items-center gap-4 transition hover:opacity-90"
                 >
-                  <div class="relative">
+                  <div class="relative shrink-0">
                     <template v-if="getAvatarUrl(activeParticipant.avatar)">
                       <img
                         :src="getAvatarUrl(activeParticipant.avatar)"
@@ -199,11 +199,11 @@
                     </template>
                   </div>
 
-                  <div>
-                    <h2 class="font-headline text-lg font-bold text-white transition hover:text-primary">
+                  <div class="min-w-0">
+                    <h2 class="truncate font-headline text-base font-bold text-white transition hover:text-primary sm:text-lg">
                       {{ activeParticipant.name }}
                     </h2>
-                    <p class="text-xs text-on-surface-variant">
+                    <p class="truncate text-xs text-on-surface-variant">
                       {{ activeParticipant.email }}
                     </p>
                   </div>
@@ -212,13 +212,13 @@
 
               <div
                 ref="messagesContainer"
-                class="flex-1 overflow-y-auto p-8 space-y-6"
+                class="flex flex-1 flex-col overflow-y-auto p-4 space-y-4 sm:p-6 lg:p-8"
               >
                 <div v-if="messagesLoading" class="space-y-5">
                   <div
                     v-for="n in 4"
                     :key="`msg-skeleton-${n}`"
-                    class="flex items-end gap-3 max-w-[50%] animate-pulse opacity-20"
+                    class="flex max-w-[85%] items-end gap-3 animate-pulse opacity-20 sm:max-w-[70%]"
                   >
                     <div class="h-8 w-8 rounded-full bg-surface-container-high"></div>
                     <div class="h-12 w-full rounded-2xl rounded-bl-none bg-surface-container-high"></div>
@@ -227,7 +227,7 @@
 
                 <div
                   v-else-if="messages.length === 0"
-                  class="flex h-full items-center justify-center text-sm text-on-surface-variant"
+                  class="flex h-full items-center justify-center text-center text-sm text-on-surface-variant"
                 >
                   No messages yet. Start the conversation.
                 </div>
@@ -242,11 +242,11 @@
                   <div
                     v-for="message in messages"
                     :key="message.id"
-                    class="flex max-w-[70%] items-end gap-3"
-                    :class="isMyMessage(message) ? 'self-end flex-row-reverse' : ''"
+                    class="flex w-full items-end gap-3"
+                    :class="isMyMessage(message) ? 'justify-end' : 'justify-start'"
                   >
                     <template v-if="!isMyMessage(message)">
-                      <RouterLink :to="`/profile/${message.sender?.id}`" class="block">
+                      <RouterLink :to="`/profile/${message.sender?.id}`" class="block shrink-0 self-end">
                         <template v-if="getAvatarUrl(message.sender?.avatar)">
                           <img
                             :src="getAvatarUrl(message.sender?.avatar)"
@@ -264,9 +264,9 @@
                     </template>
 
                     <div
-                      class="whitespace-pre-wrap break-words p-4 text-sm shadow-lg"
+                      class="max-w-[85%] whitespace-pre-wrap break-words p-3 text-sm shadow-lg sm:max-w-[75%] sm:p-4"
                       :class="isMyMessage(message)
-                        ? 'rounded-2xl rounded-br-none bg-gradient-to-br from-fuchsia-600 to-purple-600 text-white shadow-[0_5px_20px_rgba(246,128,255,0.2)]'
+                        ? 'ml-auto rounded-2xl rounded-br-none bg-gradient-to-br from-fuchsia-600 to-purple-600 text-white shadow-[0_5px_20px_rgba(246,128,255,0.2)]'
                         : 'rounded-2xl rounded-bl-none bg-surface-container-high text-white'"
                     >
                       {{ message.content }}
@@ -282,15 +282,15 @@
                 </template>
               </div>
 
-              <div class="bg-surface-container/30 p-6 backdrop-blur-md">
+              <div class="bg-surface-container/30 p-3 backdrop-blur-md sm:p-4 lg:p-6">
                 <p v-if="sendError" class="mb-3 text-sm text-error">
                   {{ sendError }}
                 </p>
 
-                <div class="relative flex items-center gap-3 rounded-2xl bg-surface-container-low p-2 ring-1 ring-white/5">
+                <div class="relative flex items-center gap-2 rounded-2xl bg-surface-container-low p-2 ring-1 ring-white/5 sm:gap-3">
                   <button
                     type="button"
-                    class="flex h-10 w-10 items-center justify-center text-on-surface-variant transition-colors hover:text-primary"
+                    class="flex h-10 w-10 shrink-0 items-center justify-center text-on-surface-variant transition-colors hover:text-primary"
                   >
                     <span class="material-symbols-outlined">add_circle</span>
                   </button>
@@ -299,11 +299,11 @@
                     v-model="messageForm.content"
                     type="text"
                     placeholder="Type your message..."
-                    class="flex-1 border-none bg-transparent py-2 text-sm text-white placeholder:text-on-surface-variant/40 focus:ring-0"
+                    class="min-w-0 flex-1 border-none bg-transparent py-2 text-sm text-white placeholder:text-on-surface-variant/40 focus:ring-0"
                     @keydown.enter.prevent="sendMessage"
                   />
 
-                  <div class="relative">
+                  <div class="relative shrink-0">
                     <button
                       type="button"
                       class="flex h-10 w-10 items-center justify-center text-on-surface-variant transition-colors hover:text-primary"
@@ -314,7 +314,7 @@
 
                     <div
                       v-if="showEmojiPicker"
-                      class="absolute bottom-14 right-0 z-30 w-64 rounded-2xl border border-white/10 bg-surface-container p-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]"
+                      class="absolute bottom-14 right-0 z-30 w-56 rounded-2xl border border-white/10 bg-surface-container p-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)] sm:w-64"
                     >
                       <div class="grid grid-cols-6 gap-2">
                         <button
@@ -333,7 +333,7 @@
                   <button
                     type="button"
                     :disabled="sendLoading || !messageForm.content.trim() || !activeParticipant"
-                    class="flex h-10 w-12 items-center justify-center rounded-xl bg-primary text-on-primary shadow-[0_0_15px_rgba(246,128,255,0.4)] transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                    class="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary shadow-[0_0_15px_rgba(246,128,255,0.4)] transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
                     @click="sendMessage"
                   >
                     <span
@@ -377,23 +377,23 @@
         class="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
         @click.self="closeUsersPopup"
       >
-        <div class="w-full max-w-3xl rounded-3xl border border-white/10 bg-surface-container p-6 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
-          <div class="mb-5 flex items-center justify-between gap-4">
-            <div>
-              <h2 class="font-headline text-2xl font-bold text-white">All Users</h2>
+        <div class="w-full max-w-3xl rounded-3xl border border-white/10 bg-surface-container p-4 shadow-[0_20px_60px_rgba(0,0,0,0.5)] sm:p-6">
+          <div class="mb-5 flex items-start justify-between gap-4">
+            <div class="min-w-0">
+              <h2 class="font-headline text-xl font-bold text-white sm:text-2xl">All Users</h2>
               <p class="text-sm text-on-surface-variant">Choose anyone on the platform to start a chat.</p>
             </div>
 
             <button
               type="button"
-              class="rounded-full p-2 text-on-surface-variant transition hover:bg-surface-container-high hover:text-white"
+              class="shrink-0 rounded-full p-2 text-on-surface-variant transition hover:bg-surface-container-high hover:text-white"
               @click="closeUsersPopup"
             >
               <span class="material-symbols-outlined">close</span>
             </button>
           </div>
 
-          <div class="mb-5 relative">
+          <div class="relative mb-5">
             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant">
               search
             </span>
@@ -401,11 +401,11 @@
               v-model="usersPopupSearch"
               type="text"
               placeholder="Search users..."
-              class="w-full rounded-xl border-none bg-surface-container-low py-3 pl-10 text-sm text-white placeholder:text-on-surface-variant/50 focus:ring-1 focus:ring-primary/50"
+              class="w-full rounded-xl border-none bg-surface-container-low py-3 pl-10 pr-4 text-sm text-white placeholder:text-on-surface-variant/50 focus:ring-1 focus:ring-primary/50"
             />
           </div>
 
-          <div class="max-h-[420px] overflow-y-auto space-y-3">
+          <div class="max-h-[420px] space-y-3 overflow-y-auto">
             <div
               v-if="usersLoading"
               v-for="n in 5"
@@ -430,24 +430,24 @@
               v-else
               v-for="user in filteredUsersForPopup"
               :key="`popup-user-${user.id}`"
-              class="flex items-center gap-4 rounded-2xl bg-surface-container-low p-4 transition hover:bg-surface-container-high"
+              class="flex items-center gap-3 rounded-2xl bg-surface-container-low p-4 transition hover:bg-surface-container-high sm:gap-4"
             >
               <template v-if="getAvatarUrl(user.profile?.avatar)">
                 <img
                   :src="getAvatarUrl(user.profile?.avatar)"
                   :alt="user.name || 'User avatar'"
-                  class="h-12 w-12 rounded-full object-cover ring-2 ring-primary/20"
+                  class="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-primary/20 sm:h-12 sm:w-12"
                 />
               </template>
 
               <template v-else>
-                <div class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary/20 bg-zinc-900 text-sm font-bold uppercase text-white">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-primary/20 bg-zinc-900 text-sm font-bold uppercase text-white sm:h-12 sm:w-12">
                   {{ getInitials(user.name) }}
                 </div>
               </template>
 
               <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
                   <h3 class="truncate font-headline text-sm font-bold text-white">
                     {{ user.name }}
                   </h3>
@@ -467,7 +467,7 @@
 
               <button
                 type="button"
-                class="rounded-full bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-on-primary shadow-[0_0_15px_rgba(246,128,255,0.25)] transition hover:scale-105 active:scale-95"
+                class="shrink-0 rounded-full bg-primary px-3 py-2 text-[11px] font-bold uppercase tracking-widest text-on-primary shadow-[0_0_15px_rgba(246,128,255,0.25)] transition hover:scale-105 active:scale-95 sm:px-4 sm:text-xs"
                 @click="startChatFromPopup(user, 'users')"
               >
                 Message
@@ -483,23 +483,23 @@
         class="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
         @click.self="closeFollowingPopup"
       >
-        <div class="w-full max-w-3xl rounded-3xl border border-white/10 bg-surface-container p-6 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
-          <div class="mb-5 flex items-center justify-between gap-4">
-            <div>
-              <h2 class="font-headline text-2xl font-bold text-white">Following</h2>
+        <div class="w-full max-w-3xl rounded-3xl border border-white/10 bg-surface-container p-4 shadow-[0_20px_60px_rgba(0,0,0,0.5)] sm:p-6">
+          <div class="mb-5 flex items-start justify-between gap-4">
+            <div class="min-w-0">
+              <h2 class="font-headline text-xl font-bold text-white sm:text-2xl">Following</h2>
               <p class="text-sm text-on-surface-variant">Quick access to people you already follow.</p>
             </div>
 
             <button
               type="button"
-              class="rounded-full p-2 text-on-surface-variant transition hover:bg-surface-container-high hover:text-white"
+              class="shrink-0 rounded-full p-2 text-on-surface-variant transition hover:bg-surface-container-high hover:text-white"
               @click="closeFollowingPopup"
             >
               <span class="material-symbols-outlined">close</span>
             </button>
           </div>
 
-          <div class="mb-5 relative">
+          <div class="relative mb-5">
             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant">
               search
             </span>
@@ -507,11 +507,11 @@
               v-model="followingPopupSearch"
               type="text"
               placeholder="Search following..."
-              class="w-full rounded-xl border-none bg-surface-container-low py-3 pl-10 text-sm text-white placeholder:text-on-surface-variant/50 focus:ring-1 focus:ring-primary/50"
+              class="w-full rounded-xl border-none bg-surface-container-low py-3 pl-10 pr-4 text-sm text-white placeholder:text-on-surface-variant/50 focus:ring-1 focus:ring-primary/50"
             />
           </div>
 
-          <div class="max-h-[420px] overflow-y-auto space-y-3">
+          <div class="max-h-[420px] space-y-3 overflow-y-auto">
             <div
               v-if="followingLoading"
               v-for="n in 5"
@@ -536,18 +536,18 @@
               v-else
               v-for="user in filteredFollowingForPopup"
               :key="`popup-following-${user.id}`"
-              class="flex items-center gap-4 rounded-2xl bg-surface-container-low p-4 transition hover:bg-surface-container-high"
+              class="flex items-center gap-3 rounded-2xl bg-surface-container-low p-4 transition hover:bg-surface-container-high sm:gap-4"
             >
               <template v-if="getAvatarUrl(user.avatar)">
                 <img
                   :src="getAvatarUrl(user.avatar)"
                   :alt="user.name || 'User avatar'"
-                  class="h-12 w-12 rounded-full object-cover ring-2 ring-primary/20"
+                  class="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-primary/20 sm:h-12 sm:w-12"
                 />
               </template>
 
               <template v-else>
-                <div class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary/20 bg-zinc-900 text-sm font-bold uppercase text-white">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-primary/20 bg-zinc-900 text-sm font-bold uppercase text-white sm:h-12 sm:w-12">
                   {{ getInitials(user.name) }}
                 </div>
               </template>
@@ -563,7 +563,7 @@
 
               <button
                 type="button"
-                class="rounded-full bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-on-primary shadow-[0_0_15px_rgba(246,128,255,0.25)] transition hover:scale-105 active:scale-95"
+                class="shrink-0 rounded-full bg-primary px-3 py-2 text-[11px] font-bold uppercase tracking-widest text-on-primary shadow-[0_0_15px_rgba(246,128,255,0.25)] transition hover:scale-105 active:scale-95 sm:px-4 sm:text-xs"
                 @click="startChatFromPopup(user, 'following')"
               >
                 Message
