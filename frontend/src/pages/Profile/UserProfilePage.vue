@@ -3,20 +3,23 @@
     <div class="min-h-screen bg-background text-on-surface antialiased">
       <TopNavbar
         :profile="profile"
-        @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed"
+        @toggle-sidebar="handleSidebarToggle"
       />
 
       <div class="flex min-h-screen">
-        <AppSidebar :collapsed="sidebarCollapsed" />
+        <AppSidebar
+          :collapsed="sidebarCollapsed"
+          :mobile-open="mobileSidebarOpen"
+          @close="mobileSidebarOpen = false"
+        />
 
         <main
           :class="[
-            'flex-1 pb-24 transition-all duration-300',
+            'min-w-0 flex-1 pb-24 transition-all duration-300',
             sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
           ]"
         >
-          <!-- Hero Section -->
-          <section class="relative h-96 w-full overflow-hidden">
+          <section class="relative h-[420px] w-full overflow-hidden md:h-96">
             <img
               :src="coverImage"
               alt="Profile Banner"
@@ -25,9 +28,9 @@
 
             <div class="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent"></div>
 
-            <div class="absolute bottom-0 left-0 flex w-full flex-col gap-6 px-8 pb-8 md:flex-row md:items-end">
+            <div class="absolute bottom-0 left-0 flex w-full flex-col gap-6 px-4 pb-6 sm:px-6 md:flex-row md:items-end md:px-8 md:pb-8">
               <div class="group relative">
-                <div class="h-32 w-32 overflow-hidden rounded-full border-4 border-background bg-zinc-800 shadow-2xl md:h-44 md:w-44">
+                <div class="h-28 w-28 overflow-hidden rounded-full border-4 border-background bg-zinc-800 shadow-2xl sm:h-32 sm:w-32 md:h-44 md:w-44">
                   <img
                     :src="avatarImage"
                     :alt="profile?.user?.name || 'User avatar'"
@@ -38,18 +41,18 @@
                 <div class="absolute bottom-2 right-2 h-8 w-8 rounded-full border-4 border-background bg-green-500"></div>
               </div>
 
-              <div class="flex-1">
+              <div class="min-w-0 flex-1">
                 <div class="mb-4 flex flex-col gap-4 md:flex-row md:items-center">
-                  <h1 class="font-headline text-4xl font-black tracking-tighter text-white md:text-6xl">
+                  <h1 class="break-words font-headline text-3xl font-black tracking-tighter text-white sm:text-4xl md:text-6xl">
                     {{ profile?.user?.name || 'User Profile' }}
                   </h1>
 
-                  <div class="flex gap-3">
+                  <div class="flex flex-wrap gap-3">
                     <button
                       v-if="!isOwnProfile"
                       type="button"
                       :disabled="followLoading"
-                      class="rounded-full px-8 py-2 text-sm font-bold shadow-lg transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+                      class="rounded-full px-6 py-2 text-sm font-bold shadow-lg transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 md:px-8"
                       :class="isFollowing
                         ? 'border border-outline-variant/20 bg-surface-container-high text-white hover:bg-surface-bright'
                         : 'bg-primary text-on-primary-fixed shadow-primary/20 hover:scale-105'"
@@ -61,7 +64,7 @@
                     <button
                       v-if="!isOwnProfile"
                       type="button"
-                      class="rounded-full border border-outline-variant/20 bg-surface-container-high px-6 py-2 text-sm font-semibold text-white transition-all hover:bg-surface-bright"
+                      class="rounded-full border border-outline-variant/20 bg-surface-container-high px-5 py-2 text-sm font-semibold text-white transition-all hover:bg-surface-bright md:px-6"
                       @click="goToMessages"
                     >
                       Message
@@ -69,27 +72,26 @@
                   </div>
                 </div>
 
-                <p class="max-w-2xl font-body text-lg font-medium leading-relaxed text-on-surface-variant">
+                <p class="max-w-2xl text-base font-medium leading-relaxed text-on-surface-variant md:text-lg">
                   {{ profile?.bio || 'No bio added yet.' }}
                 </p>
               </div>
             </div>
           </section>
 
-          <!-- Lower Part -->
-          <div class="mx-auto mt-20 max-w-6xl px-6">
+          <div class="mx-auto mt-16 max-w-6xl px-4 sm:px-6 md:mt-20">
             <div class="mb-16 flex flex-col gap-12 md:flex-row">
               <div class="flex-1 space-y-6">
                 <div class="space-y-4">
                   <h2 class="font-label text-sm font-black uppercase tracking-[0.3em] text-primary">
                     Bio
                   </h2>
-                  <p class="text-xl font-light italic leading-relaxed text-on-surface-variant">
+                  <p class="text-lg font-light italic leading-relaxed text-on-surface-variant sm:text-xl">
                     {{ profile?.bio || 'No bio added yet.' }}
                   </p>
                 </div>
 
-                <div class="flex gap-10">
+                <div class="flex gap-8 sm:gap-10">
                   <button
                     type="button"
                     class="text-left transition hover:opacity-80"
@@ -126,12 +128,12 @@
                   <div class="absolute inset-0 bg-gradient-to-br from-tertiary/40 to-primary/40 opacity-20 group-hover:opacity-40"></div>
 
                   <div class="relative rounded-[1.8rem] bg-background p-6">
-                    <div class="mb-6 flex items-start justify-between">
+                    <div class="mb-6 flex items-start justify-between gap-3">
                       <span class="flex items-center gap-1 rounded-full bg-tertiary px-3 py-1 text-[10px] font-black text-on-tertiary">
                         <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-white"></span>
                         LIVE NOW
                       </span>
-                      <span class="text-xs text-zinc-500">
+                      <span class="text-right text-xs text-zinc-500">
                         {{ profile.live_stream.current_viewers }} watching
                       </span>
                     </div>
@@ -168,7 +170,7 @@
             </div>
 
             <div class="grid grid-cols-1 gap-8">
-              <section class="rounded-3xl bg-surface-container-low p-6">
+              <section class="rounded-3xl bg-surface-container-low p-4 sm:p-6">
                 <div class="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div>
                     <h2 class="font-label text-sm font-black uppercase tracking-[0.2em] text-white">
@@ -235,7 +237,7 @@
                       {{ video.description || 'No description.' }}
                     </p>
 
-                    <div class="flex items-center gap-4 font-label text-[10px] uppercase tracking-widest text-zinc-600">
+                    <div class="flex flex-wrap items-center gap-4 font-label text-[10px] uppercase tracking-widest text-zinc-600">
                       <span class="flex items-center gap-1">
                         <span class="material-symbols-outlined text-[14px]">comment</span>
                         {{ video.comments_count || 0 }}
@@ -245,7 +247,7 @@
                   </div>
                 </div>
 
-                <div v-if="totalPages > 1" class="mt-8 flex items-center justify-center gap-2">
+                <div v-if="totalPages > 1" class="mt-8 flex flex-wrap items-center justify-center gap-2">
                   <button
                     type="button"
                     class="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-400 transition hover:bg-white/5 disabled:opacity-40"
@@ -301,7 +303,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
@@ -312,6 +314,7 @@ const route = useRoute()
 const router = useRouter()
 
 const sidebarCollapsed = ref(false)
+const mobileSidebarOpen = ref(false)
 
 const profile = ref(null)
 const loading = ref(false)
@@ -365,6 +368,27 @@ const normalizeUsersWithAvatar = (users = []) => {
     avatar: user?.avatar ? buildStorageUrl(user.avatar) : null,
   }))
 }
+
+const handleSidebarToggle = () => {
+  if (window.innerWidth < 768) {
+    mobileSidebarOpen.value = !mobileSidebarOpen.value
+    return
+  }
+
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+const handleResize = () => {
+  if (window.innerWidth >= 768) {
+    mobileSidebarOpen.value = false
+  }
+}
+
+watch(mobileSidebarOpen, (isOpen) => {
+  if (window.innerWidth < 768) {
+    document.body.style.overflow = isOpen ? 'hidden' : ''
+  }
+})
 
 const coverImage = computed(() => {
   return profile.value?.background_image
@@ -544,8 +568,16 @@ const openFollowingModal = async () => {
 }
 
 onMounted(async () => {
+  handleResize()
+  window.addEventListener('resize', handleResize)
+
   await loadProfile()
   await loadFollowState()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  document.body.style.overflow = ''
 })
 </script>
 

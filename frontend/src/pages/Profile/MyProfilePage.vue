@@ -3,19 +3,23 @@
     <div class="min-h-screen bg-background text-on-surface antialiased">
       <TopNavbar
         :profile="profile"
-        @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed"
+        @toggle-sidebar="handleSidebarToggle"
       />
 
       <div class="flex min-h-screen">
-        <AppSidebar :collapsed="sidebarCollapsed" />
+        <AppSidebar
+          :collapsed="sidebarCollapsed"
+          :mobile-open="mobileSidebarOpen"
+          @close="mobileSidebarOpen = false"
+        />
 
         <main
           :class="[
-            'flex-1 pb-24 transition-all duration-300',
+            'min-w-0 flex-1 pb-24 transition-all duration-300',
             sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
           ]"
         >
-          <section class="relative h-[460px] w-full overflow-hidden bg-surface-container-lowest">
+          <section class="relative h-[420px] w-full overflow-hidden bg-surface-container-lowest md:h-[460px]">
             <img
               :src="coverImage"
               alt="Banner Image"
@@ -24,21 +28,21 @@
 
             <div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
 
-            <div class="absolute inset-0 flex flex-col items-center justify-center translate-y-12">
+            <div class="absolute inset-0 flex flex-col items-center justify-center translate-y-10 px-4 md:translate-y-12">
               <div class="group relative">
                 <div class="absolute -inset-1 rounded-full bg-gradient-to-r from-primary to-tertiary blur opacity-40 transition duration-1000 group-hover:opacity-70 group-hover:duration-200"></div>
                 <img
                   :src="avatarImage"
                   alt="Avatar"
-                  class="relative h-32 w-32 rounded-full border-4 border-background object-cover md:h-40 md:w-40"
+                  class="relative h-28 w-28 rounded-full border-4 border-background object-cover sm:h-32 sm:w-32 md:h-40 md:w-40"
                 />
               </div>
 
               <div class="mt-6 text-center">
-                <h1 class="neon-glow font-headline text-4xl font-black tracking-tighter md:text-5xl">
+                <h1 class="neon-glow font-headline text-3xl font-black tracking-tighter sm:text-4xl md:text-5xl">
                   {{ profile?.user?.name || 'My Profile' }}
                 </h1>
-                <p class="mt-1 font-medium text-on-surface-variant">
+                <p class="mt-1 break-all px-4 font-medium text-on-surface-variant">
                   {{ profile?.user?.email || 'No email' }}
                 </p>
                 <span
@@ -49,10 +53,10 @@
               </div>
             </div>
 
-            <div class="absolute right-8 top-8">
+            <div class="absolute right-4 top-4 md:right-8 md:top-8">
               <button
                 type="button"
-                class="rounded-full border border-white/10 bg-white/10 px-6 py-2.5 font-semibold text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-95"
+                class="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-95 md:px-6 md:py-2.5"
                 @click="openEditModal"
               >
                 Edit Profile
@@ -60,19 +64,19 @@
             </div>
           </section>
 
-          <div class="mx-auto mt-20 max-w-6xl px-6">
+          <div class="mx-auto mt-16 max-w-6xl px-4 sm:px-6 md:mt-20">
             <div class="mb-16 flex flex-col gap-12 md:flex-row">
               <div class="flex-1 space-y-6">
                 <div class="space-y-4">
                   <h2 class="font-label text-sm font-black uppercase tracking-[0.3em] text-primary">
                     Bio
                   </h2>
-                  <p class="text-xl font-light italic leading-relaxed text-on-surface-variant">
+                  <p class="text-lg font-light italic leading-relaxed text-on-surface-variant sm:text-xl">
                     {{ profile?.bio || 'No bio added yet.' }}
                   </p>
                 </div>
 
-                <div class="flex gap-10">
+                <div class="flex gap-8 sm:gap-10">
                   <button
                     type="button"
                     class="text-left transition hover:opacity-80"
@@ -109,12 +113,12 @@
                   <div class="absolute inset-0 bg-gradient-to-br from-tertiary/40 to-primary/40 opacity-20 group-hover:opacity-40"></div>
 
                   <div class="relative rounded-[1.8rem] bg-background p-6">
-                    <div class="mb-6 flex items-start justify-between">
+                    <div class="mb-6 flex items-start justify-between gap-3">
                       <span class="flex items-center gap-1 rounded-full bg-tertiary px-3 py-1 text-[10px] font-black text-on-tertiary">
                         <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-white"></span>
                         LIVE NOW
                       </span>
-                      <span class="text-xs text-zinc-500">
+                      <span class="text-right text-xs text-zinc-500">
                         {{ profile.live_stream.current_viewers }} watching
                       </span>
                     </div>
@@ -151,7 +155,7 @@
             </div>
 
             <div class="grid grid-cols-1 gap-8">
-              <section class="rounded-3xl bg-surface-container-low p-6">
+              <section class="rounded-3xl bg-surface-container-low p-4 sm:p-6">
                 <div class="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div>
                     <h2 class="font-label text-sm font-black uppercase tracking-[0.2em] text-white">
@@ -218,7 +222,7 @@
                       {{ video.description || 'No description.' }}
                     </p>
 
-                    <div class="flex items-center gap-4 font-label text-[10px] uppercase tracking-widest text-zinc-600">
+                    <div class="flex flex-wrap items-center gap-4 font-label text-[10px] uppercase tracking-widest text-zinc-600">
                       <span class="flex items-center gap-1">
                         <span class="material-symbols-outlined text-[14px]">comment</span>
                         {{ video.comments_count || 0 }}
@@ -228,7 +232,7 @@
                   </div>
                 </div>
 
-                <div v-if="totalPages > 1" class="mt-8 flex items-center justify-center gap-2">
+                <div v-if="totalPages > 1" class="mt-8 flex flex-wrap items-center justify-center gap-2">
                   <button
                     type="button"
                     class="rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-400 transition hover:bg-white/5 disabled:opacity-40"
@@ -285,14 +289,14 @@
         class="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
         @click.self="closeEditModal"
       >
-        <div class="relative w-full max-w-3xl overflow-hidden rounded-lg border border-outline-variant/10 bg-surface-container shadow-[0_20px_40px_rgba(0,0,0,0.6)]">
-          <div class="absolute left-1/4 top-0 h-[500px] w-[500px] rounded-full bg-primary/10 blur-[120px] pointer-events-none"></div>
-          <div class="absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full bg-secondary/10 blur-[100px] pointer-events-none"></div>
+        <div class="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto overflow-x-hidden rounded-lg border border-outline-variant/10 bg-surface-container shadow-[0_20px_40px_rgba(0,0,0,0.6)]">
+          <div class="pointer-events-none absolute left-1/4 top-0 h-[500px] w-[500px] rounded-full bg-primary/10 blur-[120px]"></div>
+          <div class="pointer-events-none absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full bg-secondary/10 blur-[100px]"></div>
 
-          <div class="relative px-8 pb-8 pt-8 space-y-8">
-            <div class="flex items-center justify-between">
+          <div class="relative space-y-8 px-4 pb-6 pt-6 sm:px-6 sm:pb-8 sm:pt-8 md:px-8">
+            <div class="flex items-center justify-between gap-4">
               <div>
-                <h1 class="font-headline text-3xl font-extrabold -tracking-tight text-white">
+                <h1 class="font-headline text-2xl font-extrabold -tracking-tight text-white sm:text-3xl">
                   Edit Profile
                 </h1>
                 <p class="mt-1 text-sm text-on-surface-variant">
@@ -302,7 +306,7 @@
 
               <button
                 type="button"
-                class="flex h-10 w-10 items-center justify-center rounded-full bg-surface-bright/20 transition-colors hover:bg-surface-bright/40"
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-bright/20 transition-colors hover:bg-surface-bright/40"
                 @click="closeEditModal"
               >
                 <span class="material-symbols-outlined text-white">close</span>
@@ -316,7 +320,7 @@
                 </label>
 
                 <label
-                  class="dashed-outline relative flex h-48 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg bg-surface-container-low transition-all duration-300 group-hover:bg-surface-container-high"
+                  class="dashed-outline relative flex h-40 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg bg-surface-container-low transition-all duration-300 group-hover:bg-surface-container-high sm:h-48"
                 >
                   <img
                     :src="editBackgroundPreview || coverImage"
@@ -324,7 +328,7 @@
                     class="absolute inset-0 h-full w-full object-cover opacity-30 transition-opacity group-hover:opacity-40"
                   />
 
-                  <div class="relative z-10 flex flex-col items-center">
+                  <div class="relative z-10 flex flex-col items-center px-4 text-center">
                     <div class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-surface-bright/50 backdrop-blur-md transition-transform group-hover:scale-110">
                       <span class="material-symbols-outlined text-white">photo_camera</span>
                     </div>
@@ -347,13 +351,13 @@
               </div>
 
               <div class="flex flex-col items-start gap-8 md:flex-row">
-                <div class="group flex-shrink-0">
+                <div class="group shrink-0">
                   <label class="mb-3 block text-xs font-label uppercase tracking-widest text-on-surface-variant">
                     Update Avatar
                   </label>
 
                   <label
-                    class="dashed-outline-circle relative flex h-32 w-32 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-full bg-surface-container-low transition-all duration-300 group-hover:bg-surface-container-high"
+                    class="dashed-outline-circle relative flex h-28 w-28 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-full bg-surface-container-low transition-all duration-300 group-hover:bg-surface-container-high sm:h-32 sm:w-32"
                   >
                     <img
                       :src="editAvatarPreview || avatarImage"
@@ -375,7 +379,7 @@
                 </div>
 
                 <div class="w-full flex-grow space-y-2">
-                  <div class="flex items-center justify-between">
+                  <div class="flex items-center justify-between gap-3">
                     <label class="block text-xs font-label uppercase tracking-widest text-on-surface-variant">
                       Manifesto (Bio)
                     </label>
@@ -388,7 +392,7 @@
                     v-model="editForm.bio"
                     rows="6"
                     maxlength="240"
-                    class="w-full resize-none rounded-lg border-none bg-surface-container-low p-6 leading-relaxed text-white transition-all focus:ring-2 focus:ring-primary/40"
+                    class="w-full resize-none rounded-lg border-none bg-surface-container-low p-4 leading-relaxed text-white transition-all focus:ring-2 focus:ring-primary/40 sm:p-6"
                     placeholder="Write something about yourself..."
                   ></textarea>
                 </div>
@@ -436,6 +440,7 @@ import TopNavbar from '@/components/layout/TopNavbar.vue'
 import UsersListModal from '@/components/profile/UsersListModal.vue'
 
 const sidebarCollapsed = ref(false)
+const mobileSidebarOpen = ref(false)
 
 const profile = ref(null)
 const loading = ref(false)
@@ -484,6 +489,27 @@ const normalizeUsersWithAvatar = (users = []) => {
     avatar: user?.avatar ? buildStorageUrl(user.avatar) : null,
   }))
 }
+
+const handleSidebarToggle = () => {
+  if (window.innerWidth < 768) {
+    mobileSidebarOpen.value = !mobileSidebarOpen.value
+    return
+  }
+
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+const handleResize = () => {
+  if (window.innerWidth >= 768) {
+    mobileSidebarOpen.value = false
+  }
+}
+
+watch(mobileSidebarOpen, (isOpen) => {
+  if (window.innerWidth < 768) {
+    document.body.style.overflow = isOpen ? 'hidden' : ''
+  }
+})
 
 const coverImage = computed(() => {
   return profile.value?.background_image
@@ -700,10 +726,15 @@ const handleUpdateProfile = async () => {
 }
 
 onMounted(() => {
+  handleResize()
+  window.addEventListener('resize', handleResize)
   loadProfile()
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  document.body.style.overflow = ''
+
   if (editAvatarPreview.value) URL.revokeObjectURL(editAvatarPreview.value)
   if (editBackgroundPreview.value) URL.revokeObjectURL(editBackgroundPreview.value)
 })
