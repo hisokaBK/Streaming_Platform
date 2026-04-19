@@ -6,9 +6,7 @@ use App\Models\User;
 use App\Models\Video;
 use App\Models\Stream;
 use App\Models\Comment;
-use App\Models\Message;
 use App\Models\Reaction;
-use App\Models\Subscription;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AdminStatisticResource;
@@ -29,15 +27,18 @@ class StatisticController extends Controller
         $totalComments = Comment::count();
         $totalReactions = Reaction::count();
 
-        $mostReactedStream = Stream::withCount('reactions')
+        $mostReactedStream = Stream::with('user')
+            ->withCount('reactions')
             ->orderByDesc('reactions_count')
             ->first();
 
-        $mostCommentedStream = Stream::withCount('comments')
+        $mostCommentedStream = Stream::with('user')
+            ->withCount('comments')
             ->orderByDesc('comments_count')
             ->first();
 
         $mostReactedVideo = Video::with([
+                'user',
                 'stream' => function ($query) {
                     $query->withCount('reactions');
                 }
@@ -48,7 +49,8 @@ class StatisticController extends Controller
             })
             ->first();
 
-        $mostCommentedVideo = Video::withCount('comments')
+        $mostCommentedVideo = Video::with('user')
+            ->withCount('comments')
             ->orderByDesc('comments_count')
             ->first();
 
@@ -78,24 +80,40 @@ class StatisticController extends Controller
                     'id' => $mostReactedStream->id,
                     'title' => $mostReactedStream->title,
                     'reactions_count' => $mostReactedStream->reactions_count,
+                    'user' => [
+                        'id' => $mostReactedStream->user?->id,
+                        'name' => $mostReactedStream->user?->name,
+                    ],
                 ] : null,
 
                 'most_commented_stream' => $mostCommentedStream ? [
                     'id' => $mostCommentedStream->id,
                     'title' => $mostCommentedStream->title,
                     'comments_count' => $mostCommentedStream->comments_count,
+                    'user' => [
+                        'id' => $mostCommentedStream->user?->id,
+                        'name' => $mostCommentedStream->user?->name,
+                    ],
                 ] : null,
 
                 'most_reacted_video' => $mostReactedVideo ? [
                     'id' => $mostReactedVideo->id,
                     'title' => $mostReactedVideo->title,
                     'reactions_count' => $mostReactedVideo->stream?->reactions_count ?? 0,
+                    'user' => [
+                        'id' => $mostReactedVideo->user?->id,
+                        'name' => $mostReactedVideo->user?->name,
+                    ],
                 ] : null,
 
                 'most_commented_video' => $mostCommentedVideo ? [
                     'id' => $mostCommentedVideo->id,
                     'title' => $mostCommentedVideo->title,
                     'comments_count' => $mostCommentedVideo->comments_count,
+                    'user' => [
+                        'id' => $mostCommentedVideo->user?->id,
+                        'name' => $mostCommentedVideo->user?->name,
+                    ],
                 ] : null,
             ],
         ];
