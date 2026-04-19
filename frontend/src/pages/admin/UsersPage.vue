@@ -1,14 +1,18 @@
 <template>
   <div class="dark">
     <div class="min-h-screen bg-background text-on-background antialiased selection:bg-primary selection:text-on-primary">
-      <TopNavbar @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed" />
+      <TopNavbar @toggle-sidebar="handleSidebarToggle" />
 
-      <div class="flex min-h-screen">
-        <AdminSidebar :collapsed="sidebarCollapsed" />
+      <div class="flex min-h-screen pt-[72px]">
+        <AdminSidebar
+          :collapsed="sidebarCollapsed"
+          :mobile-open="mobileSidebarOpen"
+          @close="mobileSidebarOpen = false"
+        />
 
         <main
           :class="[
-            'min-h-screen flex-1 p-8 transition-all duration-300',
+            'min-w-0 min-h-screen flex-1 px-4 py-6 transition-all duration-300 sm:px-6 lg:px-8',
             sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
           ]"
         >
@@ -16,11 +20,11 @@
             <div class="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-primary/10 blur-[120px]"></div>
 
             <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <h1 class="mb-2 font-headline text-4xl font-extrabold tracking-tighter text-on-surface md:text-5xl">
+              <div class="min-w-0">
+                <h1 class="mb-2 font-headline text-3xl font-extrabold tracking-tighter text-on-surface sm:text-4xl md:text-5xl">
                   Users Management
                 </h1>
-                <p class="max-w-2xl text-lg text-on-surface-variant">
+                <p class="max-w-2xl text-base text-on-surface-variant sm:text-lg">
                   Manage platform users, review profiles, and control banned accounts.
                 </p>
               </div>
@@ -67,10 +71,10 @@
           </div>
 
           <div class="overflow-hidden rounded-3xl border border-white/5 bg-surface-container shadow-xl">
-            <div class="border-b border-white/5 px-6 py-5">
-              <div class="flex items-center justify-between gap-4">
+            <div class="border-b border-white/5 px-4 py-5 sm:px-6">
+              <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 class="font-headline text-2xl font-bold text-white">
+                  <h2 class="font-headline text-xl font-bold text-white sm:text-2xl">
                     Platform Users
                   </h2>
                   <p class="mt-1 text-sm text-on-surface-variant">
@@ -92,15 +96,15 @@
               <div
                 v-for="n in 8"
                 :key="n"
-                class="flex animate-pulse items-center gap-4 px-6 py-5"
+                class="flex animate-pulse items-center gap-4 px-4 py-5 sm:px-6"
               >
                 <div class="h-12 w-12 rounded-full bg-surface-container-high"></div>
                 <div class="flex-1">
                   <div class="mb-2 h-4 w-40 rounded bg-surface-container-high"></div>
                   <div class="h-3 w-56 rounded bg-surface-container-high"></div>
                 </div>
-                <div class="h-8 w-24 rounded-full bg-surface-container-high"></div>
-                <div class="h-10 w-28 rounded-full bg-surface-container-high"></div>
+                <div class="hidden h-8 w-24 rounded-full bg-surface-container-high sm:block"></div>
+                <div class="hidden h-10 w-28 rounded-full bg-surface-container-high sm:block"></div>
               </div>
             </div>
 
@@ -125,10 +129,10 @@
               <div
                 v-for="user in filteredUsers"
                 :key="user.id"
-                class="flex flex-col gap-4 px-6 py-5 lg:flex-row lg:items-center lg:justify-between"
+                class="flex flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between"
               >
                 <div class="flex min-w-0 items-center gap-4">
-                  <RouterLink :to="`/profile/${user.id}`" class="block">
+                  <RouterLink :to="`/profile/${user.id}`" class="block shrink-0">
                     <template v-if="avatarUrl(user)">
                       <img
                         :src="avatarUrl(user)"
@@ -217,7 +221,7 @@
           </div>
 
           <div v-if="meta.last_page > 1" class="mt-10 flex justify-center">
-            <nav class="flex items-center gap-2 rounded-full bg-surface-container-low p-2 shadow-lg">
+            <nav class="flex max-w-full flex-wrap items-center justify-center gap-2 rounded-full bg-surface-container-low p-2 shadow-lg">
               <button
                 type="button"
                 class="flex h-10 w-10 items-center justify-center rounded-full text-on-surface-variant transition-all hover:bg-surface-bright disabled:opacity-40"
@@ -242,7 +246,7 @@
 
               <button
                 type="button"
-                class="flex h-10 items-center justify-center rounded-full px-6 text-xs font-bold uppercase tracking-widest text-on-surface-variant transition-all hover:bg-surface-bright hover:text-white disabled:opacity-40"
+                class="flex h-10 items-center justify-center rounded-full px-4 text-xs font-bold uppercase tracking-widest text-on-surface-variant transition-all hover:bg-surface-bright hover:text-white disabled:opacity-40 sm:px-6"
                 :disabled="meta.current_page === meta.last_page"
                 @click="goToPage(meta.current_page + 1)"
               >
@@ -260,7 +264,7 @@
         class="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
         @click.self="closeStatusModal"
       >
-        <div class="w-full max-w-lg rounded-[2rem] border border-white/10 bg-surface-container p-8 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+        <div class="w-full max-w-lg rounded-[2rem] border border-white/10 bg-surface-container p-5 shadow-[0_20px_60px_rgba(0,0,0,0.5)] sm:p-8">
           <div class="mb-6 flex items-start gap-4">
             <div
               class="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full"
@@ -299,7 +303,7 @@
             {{ modalErrorMessage }}
           </p>
 
-          <div class="flex justify-end gap-3">
+          <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
             <button
               type="button"
               class="rounded-full border border-white/10 px-6 py-3 font-bold text-white transition hover:bg-white/5"
@@ -331,13 +335,14 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import api from '@/services/api'
 import TopNavbar from '@/components/layout/TopNavbar.vue'
 import AdminSidebar from '@/components/admin/AdminSidebar.vue'
 
 const sidebarCollapsed = ref(false)
+const mobileSidebarOpen = ref(false)
 
 const loading = ref(false)
 const users = ref([])
@@ -369,6 +374,27 @@ const buildStorageUrl = (path) => {
   if (path.startsWith('http')) return path
   return `http://localhost:8000/storage/${path}`
 }
+
+const handleSidebarToggle = () => {
+  if (window.innerWidth < 768) {
+    mobileSidebarOpen.value = !mobileSidebarOpen.value
+    return
+  }
+
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+const handleResize = () => {
+  if (window.innerWidth >= 768) {
+    mobileSidebarOpen.value = false
+  }
+}
+
+watch(mobileSidebarOpen, (isOpen) => {
+  if (window.innerWidth < 768) {
+    document.body.style.overflow = isOpen ? 'hidden' : ''
+  }
+})
 
 const avatarUrl = (user) => {
   const avatar = user?.profile?.avatar
@@ -514,7 +540,14 @@ const goToPage = async (page) => {
 }
 
 onMounted(() => {
+  handleResize()
+  window.addEventListener('resize', handleResize)
   loadUsers()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  document.body.style.overflow = ''
 })
 </script>
 
