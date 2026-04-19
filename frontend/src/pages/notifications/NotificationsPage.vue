@@ -1,21 +1,22 @@
 <template>
   <div class="dark">
-    <div class="min-h-screen overflow-x-hidden bg-background text-on-surface font-body selection:bg-primary/30">
-      <TopNavbar @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed" />
+    <div class="min-h-screen overflow-x-hidden bg-background font-body text-on-surface selection:bg-primary/30">
+      <TopNavbar @toggle-sidebar="handleSidebarToggle" />
 
-      <div class="flex min-h-screen w-full">
-        <AppSidebar :collapsed="sidebarCollapsed" />
+      <div class="flex min-h-screen w-full pt-[72px]">
+        <AppSidebar
+          :collapsed="sidebarCollapsed"
+          :mobile-open="mobileSidebarOpen"
+          @close="mobileSidebarOpen = false"
+        />
 
         <main
           :class="[
-            'min-w-0 flex-1 px-4 pb-20 pt-28 transition-all duration-300 sm:px-6 md:px-8 lg:px-12',
-            sidebarCollapsed
-              ? 'ml-20'
-              : 'ml-64'
+            'min-w-0 flex-1 px-4 pb-20 pt-6 transition-all duration-300 sm:px-6 md:px-8 lg:px-12',
+            sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
           ]"
         >
           <div class="mx-auto w-full max-w-7xl">
-            <!-- Header -->
             <header class="mb-8 flex flex-col gap-5 md:mb-12 md:flex-row md:items-end md:justify-between">
               <div class="min-w-0">
                 <h1 class="mb-2 font-headline text-3xl font-extrabold tracking-tighter text-on-surface sm:text-4xl lg:text-5xl">
@@ -52,9 +53,7 @@
               {{ generalError }}
             </p>
 
-            <!-- Notifications List -->
             <div class="space-y-4">
-              <!-- Loading -->
               <div
                 v-if="loading"
                 v-for="n in 5"
@@ -70,7 +69,6 @@
                 <div class="h-5 w-1/2 rounded-full bg-surface-container-high"></div>
               </div>
 
-              <!-- Empty -->
               <div
                 v-else-if="notifications.length === 0"
                 class="rounded-3xl bg-surface-container-low p-8 text-center sm:p-10 md:p-12"
@@ -86,7 +84,6 @@
                 </p>
               </div>
 
-              <!-- Items -->
               <div
                 v-else
                 v-for="notification in notifications"
@@ -173,7 +170,6 @@
               </div>
             </div>
 
-            <!-- Pagination -->
             <footer
               v-if="!loading && meta.last_page > 1"
               class="mt-10 flex flex-col gap-4 sm:mt-12 md:mt-16 md:flex-row md:items-center md:justify-between"
@@ -225,13 +221,14 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import api from '@/services/api'
 import TopNavbar from '@/components/layout/TopNavbar.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 
 const sidebarCollapsed = ref(false)
+const mobileSidebarOpen = ref(false)
 
 const notifications = ref([])
 const loading = ref(false)
@@ -251,6 +248,27 @@ const buildStorageUrl = (path) => {
   if (path.startsWith('http')) return path
   return `http://localhost:8000/storage/${path}`
 }
+
+const handleSidebarToggle = () => {
+  if (window.innerWidth < 768) {
+    mobileSidebarOpen.value = !mobileSidebarOpen.value
+    return
+  }
+
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+const handleResize = () => {
+  if (window.innerWidth >= 768) {
+    mobileSidebarOpen.value = false
+  }
+}
+
+watch(mobileSidebarOpen, (isOpen) => {
+  if (window.innerWidth < 768) {
+    document.body.style.overflow = isOpen ? 'hidden' : ''
+  }
+})
 
 const getActorAvatar = (notification) => {
   const avatar = notification.actor?.avatar
@@ -363,7 +381,14 @@ const goToPage = async (page) => {
 }
 
 onMounted(() => {
+  handleResize()
+  window.addEventListener('resize', handleResize)
   loadNotifications()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  document.body.style.overflow = ''
 })
 </script>
 
