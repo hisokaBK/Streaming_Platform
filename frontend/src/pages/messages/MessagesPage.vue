@@ -179,7 +179,10 @@
           <section class="hidden flex-1 flex-col bg-surface md:flex">
             <template v-if="activeParticipant">
               <div class="flex h-20 items-center justify-between bg-surface-container/30 px-8 backdrop-blur-md">
-                <div class="flex items-center gap-4">
+                <RouterLink
+                  :to="`/profile/${activeParticipant.id}`"
+                  class="flex items-center gap-4 transition hover:opacity-90"
+                >
                   <div class="relative">
                     <template v-if="getAvatarUrl(activeParticipant.avatar)">
                       <img
@@ -197,14 +200,14 @@
                   </div>
 
                   <div>
-                    <h2 class="font-headline text-lg font-bold text-white">
+                    <h2 class="font-headline text-lg font-bold text-white transition hover:text-primary">
                       {{ activeParticipant.name }}
                     </h2>
                     <p class="text-xs text-on-surface-variant">
                       {{ activeParticipant.email }}
                     </p>
                   </div>
-                </div>
+                </RouterLink>
               </div>
 
               <div
@@ -243,19 +246,21 @@
                     :class="isMyMessage(message) ? 'self-end flex-row-reverse' : ''"
                   >
                     <template v-if="!isMyMessage(message)">
-                      <template v-if="getAvatarUrl(message.sender?.avatar)">
-                        <img
-                          :src="getAvatarUrl(message.sender?.avatar)"
-                          :alt="message.sender?.name || 'Sender avatar'"
-                          class="h-8 w-8 rounded-full object-cover"
-                        />
-                      </template>
+                      <RouterLink :to="`/profile/${message.sender?.id}`" class="block">
+                        <template v-if="getAvatarUrl(message.sender?.avatar)">
+                          <img
+                            :src="getAvatarUrl(message.sender?.avatar)"
+                            :alt="message.sender?.name || 'Sender avatar'"
+                            class="h-8 w-8 rounded-full object-cover"
+                          />
+                        </template>
 
-                      <template v-else>
-                        <div class="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-zinc-900 text-[10px] font-bold uppercase text-white">
-                          {{ getInitials(message.sender?.name) }}
-                        </div>
-                      </template>
+                        <template v-else>
+                          <div class="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-zinc-900 text-[10px] font-bold uppercase text-white">
+                            {{ getInitials(message.sender?.name) }}
+                          </div>
+                        </template>
+                      </RouterLink>
                     </template>
 
                     <div
@@ -572,10 +577,13 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 import api from '@/services/api'
 import TopNavbar from '@/components/layout/TopNavbar.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
+
+const route = useRoute()
 
 const sidebarCollapsed = ref(false)
 
@@ -623,8 +631,13 @@ const authUser = ref(getStoredUser())
 const normalizeCollection = (payload) => {
   if (Array.isArray(payload)) return payload
   if (Array.isArray(payload?.data)) return payload.data
+  if (Array.isArray(payload?.data?.data)) return payload.data.data
   return []
 }
+
+const targetUserIdFromQuery = computed(() => {
+  return route.query.user ? Number(route.query.user) : null
+})
 
 const buildStorageUrl = (path) => {
   if (!path) return null
@@ -797,7 +810,7 @@ const loadMessages = async (participant) => {
 
     activeParticipant.value = response.data?.participant || participant
     activeParticipantId.value = participant.id
-    messages.value = normalizeCollection(response.data?.data)
+    messages.value = normalizeCollection(response.data)
 
     conversations.value = conversations.value.map((conversation) => {
       if (Number(conversation.participant?.id) === Number(participant.id)) {
@@ -847,6 +860,47 @@ const ensureConversationExists = (participant, newMessage = null) => {
       ...conversations.value,
     ]
   }
+}
+
+const maybeOpenQueryUserConversation = async () => {
+  if (!targetUserIdFromQuery.value || Number(targetUserIdFromQuery.value) === Number(authUser.value?.id)) {
+    return
+  }
+
+  const existingConversation = conversations.value.find(
+    (conversation) => Number(conversation.participant?.id) === Number(targetUserIdFromQuery.value)
+  )
+
+  if (existingConversation) {
+    await openConversation(existingConversation.participant)
+    return
+  }
+
+  let targetUser =
+    users.value.find((user) => Number(user.id) === Number(targetUserIdFromQuery.value)) || null
+
+  if (!targetUser) {
+    try {
+      const response = await api.get('/users')
+      users.value = normalizeCollection(response.data?.data || response.data)
+      targetUser =
+        users.value.find((user) => Number(user.id) === Number(targetUserIdFromQuery.value)) || null
+    } catch (error) {
+      console.error('Failed to refresh users for message query', error)
+    }
+  }
+
+  if (!targetUser) return
+
+  const participant = {
+    id: targetUser.id,
+    name: targetUser.name,
+    email: targetUser.email,
+    avatar: targetUser.profile?.avatar,
+  }
+
+  ensureConversationExists(participant)
+  await openConversation(participant)
 }
 
 const sendMessage = async () => {
@@ -965,10 +1019,18 @@ const startChatFromPopup = async (user, source = 'users') => {
   await openConversation(participant)
 }
 
+watch(
+  () => route.query.user,
+  async () => {
+    await maybeOpenQueryUserConversation()
+  }
+)
+
 onMounted(async () => {
   await Promise.all([loadConversations(), loadUsers(), loadFollowing()])
+  await maybeOpenQueryUserConversation()
 
-  if (conversations.value.length > 0) {
+  if (!activeParticipant.value && conversations.value.length > 0) {
     await openConversation(conversations.value[0].participant)
   }
 })
