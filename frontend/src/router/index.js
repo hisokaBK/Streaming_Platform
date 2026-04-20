@@ -11,7 +11,6 @@ import UserProfilePage from '@/pages/Profile/UserProfilePage.vue'
 import StreamsPage from '@/pages/streams/StreamsPage.vue'
 import StreamShowPage from '@/pages/streams/StreamShowPage.vue'
 import CreateStreamPage from '@/pages/streams/CreateStreamPage.vue'
-import EditStreamPage from '@/pages/streams/EditStreamPage.vue'
 import StreamStudioPage from '@/pages/streams/StreamStudioPage.vue'
 
 import VideosPage from '@/pages/videos/VideosPage.vue'
@@ -58,13 +57,6 @@ const routes = [
     path: '/streams/:id/studio',
     name: 'stream-studio',
     component: StreamStudioPage,
-    props: true,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/streams/:id/edit',
-    name: 'stream-edit',
-    component: EditStreamPage,
     props: true,
     meta: { requiresAuth: true },
   },
