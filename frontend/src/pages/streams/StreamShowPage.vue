@@ -27,27 +27,57 @@
                 v-else-if="stream"
                 class="group relative w-full overflow-hidden rounded-lg bg-surface-container-lowest"
               >
-                <div class="aspect-video w-full">
+                <div class="relative aspect-video w-full bg-black">
+                  <video
+                    ref="remoteVideoEl"
+                    autoplay
+                    playsinline
+                    class="absolute inset-0 h-full w-full object-cover"
+                    :class="hasRemoteVideo ? 'opacity-100' : 'opacity-0'"
+                  ></video>
+
+                  <audio
+                    ref="remoteAudioEl"
+                    autoplay
+                    class="hidden"
+                  ></audio>
+
                   <div
-                    class="relative flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-black via-zinc-950 to-black"
+                    v-if="!hasRemoteVideo"
+                    class="absolute inset-0"
                   >
                     <div
-                      class="absolute inset-0 bg-cover bg-center opacity-25 blur-sm"
-                      :style="playerBackgroundStyle"
-                    ></div>
-
-                    <div class="relative z-10 flex flex-col items-center gap-4 px-4 text-center">
+                      class="relative flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-black via-zinc-950 to-black"
+                    >
                       <div
-                        v-if="stream.status === 'live'"
-                        class="h-16 w-16 animate-spin rounded-full border-4 border-primary/20 border-t-primary"
+                        class="absolute inset-0 bg-cover bg-center opacity-25 blur-sm"
+                        :style="playerBackgroundStyle"
                       ></div>
 
-                      <span
-                        class="font-headline text-base font-bold tracking-widest sm:text-lg"
-                        :class="stream.status === 'live' ? 'text-primary' : 'text-zinc-300'"
-                      >
-                        {{ stream.status === 'live' ? 'CONNECTING...' : 'STREAM ENDED' }}
-                      </span>
+                      <div class="relative z-10 flex flex-col items-center gap-4 px-4 text-center">
+                        <div
+                          v-if="stream.status === 'live' && livekitConnecting"
+                          class="h-16 w-16 animate-spin rounded-full border-4 border-primary/20 border-t-primary"
+                        ></div>
+
+                        <span
+                          class="font-headline text-base font-bold tracking-widest sm:text-lg"
+                          :class="stream.status === 'live' ? 'text-primary' : 'text-zinc-300'"
+                        >
+                          {{
+                            stream.status === 'live'
+                              ? (livekitConnecting ? 'CONNECTING...' : livekitError ? 'LIVE UNAVAILABLE' : 'WAITING FOR VIDEO...')
+                              : 'STREAM ENDED'
+                          }}
+                        </span>
+
+                        <p
+                          v-if="stream.status === 'live' && livekitError"
+                          class="max-w-md text-sm text-red-300"
+                        >
+                          {{ livekitError }}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
@@ -312,8 +342,9 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import { Room, RoomEvent, Track } from 'livekit-client'
 import api from '@/services/api'
 import TopNavbar from '@/components/layout/TopNavbar.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
@@ -328,6 +359,10 @@ const loading = ref(false)
 const reactionLoading = ref(false)
 const commentLoading = ref(false)
 const followLoading = ref(false)
+const livekitConnecting = ref(false)
+const livekitConnected = ref(false)
+const livekitError = ref('')
+const hasRemoteVideo = ref(false)
 
 const stream = ref(null)
 const showReactionsMenu = ref(false)
@@ -336,6 +371,9 @@ const showChat = ref(false)
 const commentError = ref('')
 const isFollowing = ref(false)
 const authUser = ref(null)
+const viewerRoom = ref(null)
+const remoteVideoEl = ref(null)
+const remoteAudioEl = ref(null)
 
 const commentForm = ref({
   content: '',
@@ -396,9 +434,12 @@ const isOwnStream = computed(() => {
 })
 
 const playerBackgroundStyle = computed(() => {
+  const thumbnail = buildStorageUrl(stream.value?.thumbnail)
+
   return {
-    backgroundImage:
-      "url('https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop')",
+    backgroundImage: thumbnail
+      ? `url('${thumbnail}')`
+      : "url('https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop')",
   }
 })
 
@@ -484,8 +525,96 @@ const toggleReactionsMenu = () => {
   showReactionsMenu.value = !showReactionsMenu.value
 }
 
+const attachTrackToElement = (track) => {
+  if (track.kind === Track.Kind.Video && remoteVideoEl.value) {
+    track.attach(remoteVideoEl.value)
+    hasRemoteVideo.value = true
+    return
+  }
+
+  if (track.kind === Track.Kind.Audio && remoteAudioEl.value) {
+    track.attach(remoteAudioEl.value)
+  }
+}
+
+const disconnectViewerRoom = () => {
+  if (viewerRoom.value) {
+    viewerRoom.value.disconnect()
+    viewerRoom.value = null
+  }
+
+  hasRemoteVideo.value = false
+  livekitConnected.value = false
+  livekitConnecting.value = false
+}
+
+const connectViewerRoom = async () => {
+  if (!stream.value || stream.value.status !== 'live') return
+  if (!localStorage.getItem('token')) {
+    livekitError.value = 'Login is required to watch this live stream.'
+    return
+  }
+
+  livekitConnecting.value = true
+  livekitConnected.value = false
+  livekitError.value = ''
+
+  try {
+    await nextTick()
+
+    const response = await api.post(`/stream/streams/${route.params.id}/viewer-token`)
+    const { token, url, room_name } = response.data?.data || {}
+
+    if (!token || !url || !room_name) {
+      throw new Error('Viewer token response is incomplete.')
+    }
+
+    const room = new Room()
+    viewerRoom.value = room
+
+    room.on(RoomEvent.TrackSubscribed, (track) => {
+      attachTrackToElement(track)
+    })
+
+    room.on(RoomEvent.TrackUnsubscribed, (track) => {
+      track.detach()
+
+      if (track.kind === Track.Kind.Video) {
+        hasRemoteVideo.value = false
+      }
+    })
+
+    room.on(RoomEvent.Disconnected, () => {
+      livekitConnected.value = false
+    })
+
+    await room.connect(url, token)
+
+    room.remoteParticipants.forEach((participant) => {
+      participant.trackPublications.forEach((publication) => {
+        if (publication.track) {
+          attachTrackToElement(publication.track)
+        }
+      })
+    })
+
+    livekitConnected.value = true
+  } catch (error) {
+    console.error('Failed to connect viewer room', error)
+    console.error('Viewer token response:', error?.response?.data)
+
+    livekitError.value =
+      error?.response?.data?.message ||
+      error?.message ||
+      'Failed to load live stream.'
+  } finally {
+    livekitConnecting.value = false
+  }
+}
+
 const loadStream = async () => {
   loading.value = true
+
   try {
     const response = await api.get(`/stream/streams/${route.params.id}`)
     stream.value = response.data?.data || null
@@ -604,9 +733,11 @@ onMounted(async () => {
 
   await loadStream()
   await loadFollowingState()
+  await connectViewerRoom()
 })
 
 onBeforeUnmount(() => {
+  disconnectViewerRoom()
   window.removeEventListener('resize', handleResize)
   document.body.style.overflow = ''
 })
