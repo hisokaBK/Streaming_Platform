@@ -15,6 +15,8 @@ class Stream extends Model
         'description',
         'status',
         'stream_key',
+        'room_name',
+        'thumbnail',
         'started_at',
         'ended_at',
         'current_viewers',

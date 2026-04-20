@@ -14,7 +14,7 @@ use App\Http\Controllers\Api\Admin\StatisticController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CommentController;
-
+use App\Services\LiveKitService;
 
 
 
@@ -55,6 +55,7 @@ Route::prefix('stream')->group(function () {
     Route::get('/streams/category/{category}', [StreamController::class, 'filterByCategory']);
 
     Route::middleware(['auth:sanctum','user.banned'])->group(function () {
+        Route::post('/streams/{stream}/viewer-token', [StreamController::class, 'viewerToken']);
 
         Route::middleware('stream.status.live')->group(function () {
               Route::post('/streams', [StreamController::class, 'store']);
@@ -64,6 +65,8 @@ Route::prefix('stream')->group(function () {
             Route::get('/streams/{stream}/edit', [StreamController::class, 'edit']);
             Route::put('/streams/{stream}', [StreamController::class, 'update']);
             Route::patch('/streams/{stream}/end', [StreamController::class, 'end']);
+            Route::post('/streams/{stream}/studio-token', [StreamController::class, 'studioToken']);
+
         });
     });
 });

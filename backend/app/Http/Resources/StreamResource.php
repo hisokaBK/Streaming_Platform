@@ -9,7 +9,7 @@ class StreamResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $reactionTypes = ['like', 'love', 'haha', 'wow', 'sad', 'angry', 'clap','fire'];
+        $reactionTypes = ['like', 'love', 'haha', 'wow', 'sad', 'angry', 'clap', 'fire'];
 
         $reactionsSummary = collect($reactionTypes)->mapWithKeys(function ($type) {
             return [
@@ -23,8 +23,12 @@ class StreamResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'description' => $this->description,
+
             'status' => $this->status,
             'stream_key' => $this->stream_key,
+            'room_name' => $this->room_name,
+            'thumbnail' => $this->thumbnail,
+
             'started_at' => $this->started_at,
             'ended_at' => $this->ended_at,
             'current_viewers' => $this->current_viewers,
@@ -43,7 +47,7 @@ class StreamResource extends JsonResource
                         'name' => $category->name,
                     ];
                 });
-            }),
+            }, []),
 
             'comments_count' => $this->whenCounted('comments'),
             'reactions_count' => $this->whenCounted('reactions'),
@@ -65,7 +69,7 @@ class StreamResource extends JsonResource
                         ],
                     ];
                 });
-            }),
+            }, []),
 
             'reactions' => $this->whenLoaded('reactions', function () {
                 return $this->reactions->map(function ($reaction) {
@@ -83,9 +87,10 @@ class StreamResource extends JsonResource
                         ],
                     ];
                 });
-            }),
+            }, []),
 
             'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }
