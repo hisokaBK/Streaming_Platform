@@ -335,7 +335,7 @@ const handleCreateStream = async () => {
 
     if (streamId) {
       setTimeout(() => {
-        router.push(`/streams/${streamId}`)
+        router.push(`/streams/${streamId}/studio`)
       }, 800)
     } else {
       setTimeout(() => {

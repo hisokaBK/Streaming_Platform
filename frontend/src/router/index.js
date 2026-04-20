@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+import HomePage from '@/pages/public/HomePage.vue'
+
 import LoginPage from '@/pages/auth/LoginPage.vue'
 import RegisterPage from '@/pages/auth/RegisterPage.vue'
 
@@ -10,6 +12,7 @@ import StreamsPage from '@/pages/streams/StreamsPage.vue'
 import StreamShowPage from '@/pages/streams/StreamShowPage.vue'
 import CreateStreamPage from '@/pages/streams/CreateStreamPage.vue'
 import EditStreamPage from '@/pages/streams/EditStreamPage.vue'
+import StreamStudioPage from '@/pages/streams/StreamStudioPage.vue'
 
 import VideosPage from '@/pages/videos/VideosPage.vue'
 import VideoShowPage from '@/pages/videos/VideoShowPage.vue'
@@ -24,6 +27,12 @@ import CategoriesPage from '@/pages/admin/CategoriesPage.vue'
 
 const routes = [
   {
+    path: '/',
+    name: 'home',
+    component: HomePage,
+  },
+
+  {
     path: '/login',
     name: 'login',
     component: LoginPage,
@@ -35,20 +44,9 @@ const routes = [
   },
 
   {
-    path: '/',
+    path: '/streams',
     name: 'streams',
     component: StreamsPage,
-  },
-  {
-    path: '/streams',
-    name: 'streams-list',
-    component: StreamsPage,
-  },
-  {
-    path: '/streams/:id',
-    name: 'stream-show',
-    component: StreamShowPage,
-    props: true,
   },
   {
     path: '/streams/create',
@@ -57,11 +55,24 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/streams/:id/studio',
+    name: 'stream-studio',
+    component: StreamStudioPage,
+    props: true,
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/streams/:id/edit',
     name: 'stream-edit',
     component: EditStreamPage,
     props: true,
     meta: { requiresAuth: true },
+  },
+  {
+    path: '/streams/:id',
+    name: 'stream-show',
+    component: StreamShowPage,
+    props: true,
   },
 
   {
@@ -121,6 +132,11 @@ const routes = [
     component: CategoriesPage,
     meta: { requiresAuth: true, requiresAdmin: true },
   },
+
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/',
+  },
 ]
 
 const router = createRouter({
@@ -139,7 +155,7 @@ router.beforeEach((to, from, next) => {
   }
 
   if (to.meta.requiresAdmin && role !== 'admin') {
-    return next({ name: 'streams' })
+    return next({ name: 'home' })
   }
 
   next()
