@@ -1,0 +1,8 @@
+port: 7880
+
+rtc:
+  tcp_port: 7881
+  udp_port: 7882
+
+keys:
+  mydevkey: "my-super-secret-livekit-key-123456789"

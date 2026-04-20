@@ -55,5 +55,17 @@ services:
     depends_on:
       - db
 
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: streaming_livekit
+    command: --config /etc/livekit/livekit.yaml
+    volumes:
+      - ./docker/livekit/livekit.yaml:/etc/livekit/livekit.yaml:ro
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "7882:7882/udp"
+    restart: unless-stopped
+
 volumes:
   pgdata:
