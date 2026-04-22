@@ -27,7 +27,9 @@ class StreamResource extends JsonResource
             'status' => $this->status,
             'stream_key' => $this->stream_key,
             'room_name' => $this->room_name,
+
             'thumbnail' => $this->thumbnail,
+            'thumbnail_url' => $this->thumbnail,
 
             'started_at' => $this->started_at,
             'ended_at' => $this->ended_at,
@@ -38,6 +40,7 @@ class StreamResource extends JsonResource
                 'name' => $this->user?->name,
                 'email' => $this->user?->email,
                 'avatar' => $this->user?->profile?->avatar,
+                'avatar_url' => $this->user?->profile?->avatar,
             ],
 
             'categories' => $this->whenLoaded('categories', function () {
@@ -46,7 +49,7 @@ class StreamResource extends JsonResource
                         'id' => $category->id,
                         'name' => $category->name,
                     ];
-                });
+                })->values();
             }, []),
 
             'comments_count' => $this->whenCounted('comments'),
@@ -66,9 +69,10 @@ class StreamResource extends JsonResource
                             'name' => $comment->user?->name,
                             'email' => $comment->user?->email,
                             'avatar' => $comment->user?->profile?->avatar,
+                            'avatar_url' => $comment->user?->profile?->avatar,
                         ],
                     ];
-                });
+                })->values();
             }, []),
 
             'reactions' => $this->whenLoaded('reactions', function () {
@@ -84,9 +88,10 @@ class StreamResource extends JsonResource
                             'name' => $reaction->user?->name,
                             'email' => $reaction->user?->email,
                             'avatar' => $reaction->user?->profile?->avatar,
+                            'avatar_url' => $reaction->user?->profile?->avatar,
                         ],
                     ];
-                });
+                })->values();
             }, []),
 
             'created_at' => $this->created_at,

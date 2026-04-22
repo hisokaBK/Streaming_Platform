@@ -2,31 +2,45 @@
 
 namespace App\Http\Controllers\Api;
 
-use Illuminate\Support\Str;
-use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\StreamResource;
-use Illuminate\Support\Facades\DB;
 use App\Http\Requests\Stream\StoreStreamRequest;
 use App\Http\Requests\Stream\UpdateStreamRequest;
-use App\Services\LiveKitService;
+use App\Http\Resources\StreamResource;
+use App\Models\Category;
+use App\Models\Comment;
+use App\Models\Notification;
 use App\Models\Stream;
 use App\Models\Subscription;
-use App\Models\Notification;
-use App\Models\Category;
 use App\Models\Video;
-use App\Models\Comment;
+use App\Services\LiveKitService;
+use App\Services\RecordingService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class StreamController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $streams = Stream::with([
-                'user.profile',
-                'categories',
-                'reactions.user.profile',
-            ])
+        $status = $request->query('status');
+        $categoryId = $request->query('category_id');
+
+        $streams = Stream::with($this->baseRelations())
             ->withCount(['comments', 'reactions'])
+            ->when($status && $status !== 'all', function ($query) use ($status) {
+                $allowedStatuses = ['live', 'ended'];
+
+                if (in_array($status, $allowedStatuses, true)) {
+                    $query->where('status', $status);
+                }
+            })
+            ->when($categoryId && $categoryId !== 'all', function ($query) use ($categoryId) {
+                $query->whereHas('categories', function ($categoryQuery) use ($categoryId) {
+                    $categoryQuery->where('categories.id', (int) $categoryId);
+                });
+            })
             ->latest()
             ->paginate(10);
 
@@ -34,6 +48,12 @@ class StreamController extends Controller
             return response()->json([
                 'message' => 'No streams found.',
                 'data' => [],
+                'meta' => [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => 10,
+                    'total' => 0,
+                ],
             ], 200);
         }
 
@@ -49,18 +69,54 @@ class StreamController extends Controller
         ]);
     }
 
+    public function filterByCategory(Request $request, Category $category): JsonResponse
+    {
+        $status = $request->query('status');
+
+        $streams = Stream::with($this->baseRelations())
+            ->withCount(['comments', 'reactions'])
+            ->whereHas('categories', function ($query) use ($category) {
+                $query->where('categories.id', $category->id);
+            })
+            ->when($status && $status !== 'all', function ($query) use ($status) {
+                $allowedStatuses = ['live', 'ended'];
+
+                if (in_array($status, $allowedStatuses, true)) {
+                    $query->where('status', $status);
+                }
+            })
+            ->latest()
+            ->paginate(10);
+
+        if ($streams->isEmpty()) {
+            return response()->json([
+                'message' => 'No streams found for this category.',
+                'data' => [],
+                'meta' => [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => 10,
+                    'total' => 0,
+                ],
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => 'Streams filtered by category successfully.',
+            'data' => StreamResource::collection($streams),
+            'meta' => [
+                'current_page' => $streams->currentPage(),
+                'last_page' => $streams->lastPage(),
+                'per_page' => $streams->perPage(),
+                'total' => $streams->total(),
+            ],
+        ]);
+    }
+
     public function show($id): JsonResponse
     {
-        $stream = Stream::with([
-                'user.profile',
-                'categories',
-                'comments.user.profile',
-                'reactions.user.profile',
-            ])
-            ->withCount([
-                'comments',
-                'reactions',
-            ])
+        $stream = Stream::with($this->detailsRelations())
+            ->withCount(['comments', 'reactions'])
             ->find($id);
 
         if (!$stream) {
@@ -75,10 +131,12 @@ class StreamController extends Controller
         ]);
     }
 
-    public function store(StoreStreamRequest $request): JsonResponse
+    public function store(StoreStreamRequest $request, RecordingService $recordingService): JsonResponse
     {
         $stream = DB::transaction(function () use ($request) {
-            $status = $request->status ?? 'live';
+            $status = $request->input('status', 'live');
+
+            $thumbnail = $this->resolveThumbnail($request);
 
             $stream = Stream::create([
                 'user_id' => auth()->id(),
@@ -87,17 +145,32 @@ class StreamController extends Controller
                 'status' => $status,
                 'stream_key' => Str::random(32),
                 'room_name' => 'stream-' . Str::uuid(),
-                'thumbnail' => null,
-                'started_at' => now(),
+                'thumbnail' => $thumbnail,
+                'started_at' => $status === 'live' ? now() : null,
                 'ended_at' => null,
                 'current_viewers' => 0,
+                'recording_status' => $status === 'live' ? 'starting' : null,
             ]);
 
             if ($request->filled('category_ids')) {
                 $stream->categories()->sync($request->category_ids);
             }
 
-            if ($status === 'live') {
+            return $stream;
+        });
+
+        try {
+            if ($stream->status === 'live') {
+                $recordingService->ensureRoomExists($stream);
+
+                $recording = $recordingService->startParticipantRecording($stream, auth()->user());
+
+                $stream->update([
+                    'recording_egress_id' => $recording['egress_id'],
+                    'recording_status' => 'recording',
+                    'recording_started_at' => now(),
+                ]);
+
                 $followerIds = Subscription::where('streamer_id', auth()->id())
                     ->pluck('subscriber_id');
 
@@ -112,16 +185,19 @@ class StreamController extends Controller
                     ]);
                 }
             }
+        } catch (\Throwable $e) {
+            DB::transaction(function () use ($stream) {
+                $stream->categories()->detach();
+                $stream->delete();
+            });
 
-            return $stream->load([
-                'user.profile',
-                'categories',
-                'reactions.user.profile',
-            ])->loadCount([
-                'comments',
-                'reactions',
-            ]);
-        });
+            return response()->json([
+                'message' => 'Stream creation failed because recording could not start.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+
+        $stream = $this->loadBaseData($stream->fresh());
 
         return response()->json([
             'message' => 'Stream created successfully.',
@@ -138,13 +214,13 @@ class StreamController extends Controller
         }
 
         DB::transaction(function () use ($request, $stream) {
-            $newStatus = $request->status ?? $stream->status;
+            $newStatus = $request->input('status', $stream->status);
 
             $data = [
                 'title' => $request->has('title') ? $request->title : $stream->title,
                 'description' => $request->has('description') ? $request->description : $stream->description,
                 'status' => $newStatus,
-                'thumbnail' => $request->has('thumbnail') ? $request->thumbnail : $stream->thumbnail,
+                'thumbnail' => $this->resolveThumbnail($request, $stream->thumbnail),
             ];
 
             if ($stream->status !== 'live' && $newStatus === 'live') {
@@ -162,15 +238,7 @@ class StreamController extends Controller
             }
         });
 
-        $stream->load([
-                'user.profile',
-                'categories',
-                'reactions.user.profile',
-            ])
-            ->loadCount([
-                'comments',
-                'reactions',
-            ]);
+        $stream = $this->loadBaseData($stream);
 
         return response()->json([
             'message' => 'Stream updated successfully.',
@@ -180,14 +248,7 @@ class StreamController extends Controller
 
     public function edit(Stream $stream): JsonResponse
     {
-        $stream->load([
-            'user.profile',
-            'categories',
-            'reactions.user.profile',
-        ])->loadCount([
-            'comments',
-            'reactions',
-        ]);
+        $stream = $this->loadBaseData($stream);
 
         return response()->json([
             'message' => 'Stream edit data retrieved successfully.',
@@ -195,7 +256,7 @@ class StreamController extends Controller
         ]);
     }
 
-    public function end(Stream $stream): JsonResponse
+    public function end(Stream $stream, RecordingService $recordingService): JsonResponse
     {
         if ($stream->status === 'ended') {
             return response()->json([
@@ -203,92 +264,86 @@ class StreamController extends Controller
             ], 422);
         }
 
-        $stream = DB::transaction(function () use ($stream) {
-            $stream->update([
-                'status' => 'ended',
-                'ended_at' => now(),
-            ]);
+        $egressInfo = null;
+        $recordingError = null;
 
-            $stream->load([
-                'user.profile',
-                'categories',
-                'reactions.user.profile',
-            ]);
+        if ($stream->recording_egress_id) {
+            try {
+                $egressInfo = $recordingService->stopRecording($stream->recording_egress_id);
+            } catch (\Throwable $e) {
+                $recordingError = $e->getMessage();
 
-            $video = Video::firstOrCreate(
-                [
+                \Log::error('Failed to stop recording while ending stream.', [
                     'stream_id' => $stream->id,
-                ],
-                [
-                    'user_id' => $stream->user_id,
-                    'title' => $stream->title,
-                    'description' => $stream->description,
-                    'url' => '',
-                    'duration' => 0,
-                ]
-            );
-
-            if ($stream->categories->isNotEmpty()) {
-                $video->categories()->sync(
-                    $stream->categories->pluck('id')->toArray()
-                );
+                    'egress_id' => $stream->recording_egress_id,
+                    'error' => $recordingError,
+                ]);
             }
-
-            Comment::where('stream_id', $stream->id)
-                ->whereNull('video_id')
-                ->update([
-                    'video_id' => $video->id,
-                ]);
-
-            return $stream->fresh()
-                ->load([
-                    'user.profile',
-                    'categories',
-                    'reactions.user.profile',
-                ])
-                ->loadCount([
-                    'comments',
-                    'reactions',
-                ]);
-        });
-
-        return response()->json([
-            'message' => 'Stream ended successfully and replay video created.',
-            'data' => new StreamResource($stream),
-        ]);
-    }
-
-    public function filterByCategory(Category $category): JsonResponse
-    {
-        $streams = Stream::with([
-                'user.profile',
-                'categories',
-                'reactions.user.profile',
-            ])
-            ->withCount(['comments', 'reactions'])
-            ->whereHas('categories', function ($query) use ($category) {
-                $query->where('categories.id', $category->id);
-            })
-            ->latest()
-            ->paginate(10);
-
-        if ($streams->isEmpty()) {
-            return response()->json([
-                'message' => 'No streams found for this category.',
-                'data' => [],
-            ], 200);
         }
 
-        return response()->json([
-            'message' => 'Streams filtered by category successfully.',
-            'data' => StreamResource::collection($streams),
-            'meta' => [
-                'current_page' => $streams->currentPage(),
-                'last_page' => $streams->lastPage(),
-                'per_page' => $streams->perPage(),
-                'total' => $streams->total(),
-            ],
-        ]);
+        try {
+            $stream = DB::transaction(function () use ($stream, $recordingService, $egressInfo, $recordingError) {
+                $stream->load('categories');
+
+                $stream->update([
+                    'status' => 'ended',
+                    'ended_at' => now(),
+                    'recording_status' => $recordingError ? 'failed' : 'completed',
+                    'recording_ended_at' => now(),
+                ]);
+
+                $video = Video::updateOrCreate(
+                    [
+                        'stream_id' => $stream->id,
+                    ],
+                    [
+                        'user_id' => $stream->user_id,
+                        'egress_id' => $stream->recording_egress_id,
+                        'title' => $stream->title,
+                        'description' => $stream->description,
+                        'url' => $recordingService->publicRecordingUrl($stream),
+                        'duration' => $egressInfo ? $recordingService->extractDurationSeconds($egressInfo) : 0,
+                        'recording_status' => $recordingError ? 'failed' : 'completed',
+                        'size_bytes' => $egressInfo ? $recordingService->extractSizeBytes($egressInfo) : null,
+                        'recorded_at' => now(),
+                    ]
+                );
+
+                if ($stream->categories->isNotEmpty()) {
+                    $video->categories()->sync(
+                        $stream->categories->pluck('id')->toArray()
+                    );
+                }
+
+                Comment::where('stream_id', $stream->id)
+                    ->whereNull('video_id')
+                    ->update([
+                        'video_id' => $video->id,
+                    ]);
+
+                return $stream->fresh();
+            });
+
+            $stream = $this->loadBaseData($stream);
+
+            return response()->json([
+                'message' => $recordingError
+                    ? 'Stream ended, but recording stop returned an error.'
+                    : 'Stream ended successfully and replay video created.',
+                'data' => new StreamResource($stream),
+                'recording_error' => $recordingError,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Failed to end stream.', [
+                'stream_id' => $stream->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to end stream.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function studioToken(Stream $stream, LiveKitService $liveKitService): JsonResponse
@@ -335,5 +390,92 @@ class StreamController extends Controller
                 'url' => env('LIVEKIT_URL'),
             ],
         ]);
+    }
+
+    private function baseRelations(): array
+    {
+        return [
+            'user.profile',
+            'categories',
+            'reactions.user.profile',
+        ];
+    }
+
+    private function detailsRelations(): array
+    {
+        return [
+            'user.profile',
+            'categories',
+            'comments.user.profile',
+            'reactions.user.profile',
+        ];
+    }
+
+    private function loadBaseData(Stream $stream): Stream
+    {
+        return $stream->load($this->baseRelations())
+            ->loadCount(['comments', 'reactions']);
+    }
+
+    private function resolveThumbnail(Request $request, ?string $currentThumbnail = null): ?string
+    {
+        if ($request->hasFile('thumbnail')) {
+            $this->deleteThumbnailIfLocal($currentThumbnail);
+
+            $storedPath = $request->file('thumbnail')->store('streams/thumbnails', 'public');
+
+            return asset('storage/' . $storedPath);
+        }
+
+        if ($request->has('thumbnail')) {
+            $thumbnail = $request->input('thumbnail');
+
+            if ($thumbnail === null || $thumbnail === '') {
+                $this->deleteThumbnailIfLocal($currentThumbnail);
+                return null;
+            }
+
+            if (Str::startsWith($thumbnail, ['http://', 'https://'])) {
+                return $thumbnail;
+            }
+
+            return asset('storage/' . ltrim($thumbnail, '/'));
+        }
+
+        return $currentThumbnail;
+    }
+
+    private function deleteThumbnailIfLocal(?string $thumbnailUrl): void
+    {
+        $storagePath = $this->extractStoragePathFromUrl($thumbnailUrl);
+
+        if ($storagePath && Storage::disk('public')->exists($storagePath)) {
+            Storage::disk('public')->delete($storagePath);
+        }
+    }
+
+    private function extractStoragePathFromUrl(?string $url): ?string
+    {
+        if (!$url) {
+            return null;
+        }
+
+        if (!Str::startsWith($url, ['http://', 'https://'])) {
+            return ltrim($url, '/');
+        }
+
+        $parsedPath = parse_url($url, PHP_URL_PATH);
+
+        if (!$parsedPath) {
+            return null;
+        }
+
+        $parsedPath = ltrim($parsedPath, '/');
+
+        if (Str::startsWith($parsedPath, 'storage/')) {
+            return Str::after($parsedPath, 'storage/');
+        }
+
+        return null;
     }
 }

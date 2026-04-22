@@ -20,11 +20,17 @@ class Stream extends Model
         'started_at',
         'ended_at',
         'current_viewers',
+        'recording_egress_id',
+        'recording_status',
+        'recording_started_at',
+        'recording_ended_at',
     ];
 
     protected $casts = [
         'started_at' => 'datetime',
         'ended_at' => 'datetime',
+        'recording_started_at' => 'datetime',
+        'recording_ended_at' => 'datetime',
     ];
 
     public function user()

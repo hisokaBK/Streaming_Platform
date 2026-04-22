@@ -7,12 +7,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\VideoResource;
-use App\Http\Requests\Video\StoreVideoRequest;
-
 use App\Models\Video;
-use App\Models\Stream;
 use App\Models\Category;
-
 
 class VideoController extends Controller
 {
@@ -24,6 +20,9 @@ class VideoController extends Controller
                 'categories'
             ])
             ->withCount(['comments'])
+            ->where('recording_status', 'completed')
+            ->whereNotNull('url')
+            ->latest('recorded_at')
             ->latest()
             ->paginate(10);
 
@@ -59,6 +58,8 @@ class VideoController extends Controller
                 'comments.user.profile',
             ])
             ->withCount('comments')
+            ->where('recording_status', 'completed')
+            ->whereNotNull('url')
             ->find($id);
 
         if (!$video) {
@@ -74,7 +75,6 @@ class VideoController extends Controller
             'data' => new VideoResource($video),
         ]);
     }
-
 
     public function destroy(Video $video): JsonResponse
     {
@@ -102,9 +102,12 @@ class VideoController extends Controller
                 'categories',
             ])
             ->withCount(['comments'])
+            ->where('recording_status', 'completed')
+            ->whereNotNull('url')
             ->whereHas('categories', function ($query) use ($category) {
                 $query->where('categories.id', $category->id);
             })
+            ->latest('recorded_at')
             ->latest()
             ->paginate(10);
 
