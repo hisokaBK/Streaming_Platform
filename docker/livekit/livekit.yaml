@@ -2,7 +2,17 @@ port: 7880
 
 rtc:
   tcp_port: 7881
-  udp_port: 7882
+  port_range_start: 7882
+  port_range_end: 7882
+  use_external_ip: false
+
+redis:
+  address: redis:6379
 
 keys:
-  mydevkey: "my-super-secret-livekit-key-123456789"
+  mydevkey: my-super-secret-livekit-key-1234567890
+
+webhook:
+  api_key: mydevkey
+  urls:
+    - http://nginx/api/livekit/webhook

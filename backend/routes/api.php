@@ -15,8 +15,15 @@ use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CommentController;
 use App\Services\LiveKitService;
+use Illuminate\Support\Facades\Broadcast;
+use App\Http\Controllers\Api\LiveKitWebhookController;
 
 
+Route::middleware(['auth:sanctum', 'user.banned'])->post('/broadcasting/auth', function (Request $request) {
+    return Broadcast::auth($request);
+});
+
+Route::post('/livekit/webhook', [LiveKitWebhookController::class, 'handle']);
 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);

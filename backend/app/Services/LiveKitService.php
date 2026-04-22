@@ -10,10 +10,20 @@ use Agence104\LiveKit\VideoGrant;
 
 class LiveKitService
 {
+    public function broadcasterIdentity(User $user): string
+    {
+        return 'broadcaster-' . $user->id;
+    }
+
+    public function viewerIdentity(User $user): string
+    {
+        return 'viewer-' . $user->id . '-' . uniqid();
+    }
+
     public function createBroadcasterToken(Stream $stream, User $user): string
     {
         $tokenOptions = (new AccessTokenOptions())
-            ->setIdentity('broadcaster-' . $user->id)
+            ->setIdentity($this->broadcasterIdentity($user))
             ->setName($user->name);
 
         $videoGrant = (new VideoGrant())
@@ -35,7 +45,7 @@ class LiveKitService
     public function createViewerToken(Stream $stream, User $user): string
     {
         $tokenOptions = (new AccessTokenOptions())
-            ->setIdentity('viewer-' . $user->id . '-' . uniqid())
+            ->setIdentity($this->viewerIdentity($user))
             ->setName($user->name);
 
         $videoGrant = (new VideoGrant())

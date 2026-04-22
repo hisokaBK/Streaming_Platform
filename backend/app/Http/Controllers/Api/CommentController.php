@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\CommentCreated;
 use App\Models\Comment;
 use App\Models\Stream;
 use Illuminate\Http\JsonResponse;
@@ -29,11 +30,20 @@ class CommentController extends Controller
             'content' => $request->content,
         ]);
 
-        $comment->load('user');
+        $comment->load('user.profile');
+
+        $commentPayload = (new CommentResource($comment))->resolve();
+        $commentsCount = Comment::where('stream_id', $stream->id)->count();
+
+        broadcast(new CommentCreated(
+            $commentPayload,
+            (int) $stream->id,
+            (int) $commentsCount
+        ))->toOthers();
 
         return response()->json([
             'message' => 'Comment added successfully.',
-            'data' => new CommentResource($comment),
+            'data' => $commentPayload,
         ], 201);
     }
 
@@ -43,7 +53,7 @@ class CommentController extends Controller
             'content' => $request->content,
         ]);
 
-        $comment->load('user');
+        $comment->load('user.profile');
 
         return response()->json([
             'message' => 'Comment updated successfully.',

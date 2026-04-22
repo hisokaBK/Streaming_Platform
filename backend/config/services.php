@@ -34,5 +34,13 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+      'livekit' => [
+        'api_url' => env('LIVEKIT_API_URL', 'http://livekit:7880'),
+        'api_key' => env('LIVEKIT_API_KEY'),
+        'api_secret' => env('LIVEKIT_API_SECRET'),
+        'egress_mount_path' => env('LIVEKIT_EGRESS_MOUNT_PATH', '/recordings'),
+        'public_recordings_dir' => env('LIVEKIT_PUBLIC_RECORDINGS_DIR', 'videos/recordings'),
+    ],
+
 
 ];

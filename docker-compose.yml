@@ -5,11 +5,13 @@ services:
       dockerfile: docker/php/Dockerfile
     container_name: streaming
     user: "1000:1000"
+    working_dir: /var/www
     volumes:
       - ./backend:/var/www
-    working_dir: /var/www
     depends_on:
       - db
+      - livekit
+      - redis
 
   nginx:
     image: nginx:alpine
@@ -55,17 +57,62 @@ services:
     depends_on:
       - db
 
+  redis:
+    image: redis:7-alpine
+    container_name: streaming_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
   livekit:
     image: livekit/livekit-server:latest
     container_name: streaming_livekit
-    command: --config /etc/livekit/livekit.yaml
+    command:
+      - --config
+      - /etc/livekit/livekit.yaml
     volumes:
       - ./docker/livekit/livekit.yaml:/etc/livekit/livekit.yaml:ro
     ports:
       - "7880:7880"
       - "7881:7881"
       - "7882:7882/udp"
+    depends_on:
+      - redis
     restart: unless-stopped
 
+  egress:
+    image: livekit/egress:latest
+    container_name: streaming_egress
+    depends_on:
+      - livekit
+      - redis
+    environment:
+      EGRESS_CONFIG_BODY: |
+        api_key: mydevkey
+        api_secret: my-super-secret-livekit-key-1234567890
+        ws_url: ws://livekit:7880
+        insecure: true
+        redis:
+          address: redis:6379
+    volumes:
+      - ./backend/storage/app/public/videos/recordings:/recordings
+    cap_add:
+      - SYS_ADMIN
+    restart: unless-stopped
+  reverb:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: streaming_reverb
+    user: "1000:1000"
+    working_dir: /var/www
+    volumes:
+      - ./backend:/var/www
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      - app
+      
 volumes:
   pgdata:

@@ -1,17 +1,22 @@
-FROM php:8.4-fpm-alpine
+FROM composer:2 AS composer
 
-RUN apk add --no-cache \
+FROM php:8.4-fpm
+
+RUN apt-get update && apt-get install -y \
     bash \
     curl \
     git \
     unzip \
     zip \
-    postgresql-dev \
-    oniguruma-dev \
-    libxml2-dev
+    libpq-dev \
+    && docker-php-ext-configure pcntl --enable-pcntl \
+    && docker-php-ext-install -j$(nproc) \
+        bcmath \
+        pcntl \
+        pdo_pgsql \
+        pgsql \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN docker-php-ext-install pdo pdo_pgsql pgsql
-
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=composer /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
