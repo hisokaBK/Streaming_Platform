@@ -3,424 +3,423 @@
     <div class="min-h-screen overflow-x-hidden bg-background text-on-surface">
       <TopNavbar @toggle-sidebar="handleSidebarToggle" />
 
-      <div class="flex min-h-[calc(100vh-80px)] pt-0">
-        <AppSidebar
-          :collapsed="sidebarCollapsed"
-          :mobile-open="mobileSidebarOpen"
-          @close="mobileSidebarOpen = false"
-        />
+      <div class="pt-[72px]">
+        <div class="flex h-[calc(100vh-72px)]">
+          <AppSidebar
+            :collapsed="sidebarCollapsed"
+            :mobile-open="mobileSidebarOpen"
+            @close="mobileSidebarOpen = false"
+          />
 
-        <main
-          :class="[
-            'flex min-w-0 flex-1 transition-all duration-300 pt-[72px]',
-            sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
-          ]"
-        >
-          <div
-            v-if="mobileConversationsOpen"
-            class="fixed inset-0 top-[72px] z-[44] bg-black/60 backdrop-blur-sm md:hidden"
-            @click="mobileConversationsOpen = false"
-          ></div>
-
-          <!-- Left: Conversations -->
-          <section
+          <main
             :class="[
-              'flex min-w-0 flex-col border-r border-outline-variant/10 bg-surface-container-lowest transition-transform duration-300',
-              'fixed left-0 top-[72px] z-[45] h-[calc(100vh-72px)] w-[88vw] max-w-sm',
-              mobileConversationsOpen ? 'translate-x-0' : '-translate-x-full',
-              'md:static md:z-auto md:h-auto md:w-80 md:translate-x-0 lg:w-96'
+              'flex h-[calc(100vh-72px)] min-w-0 flex-1 overflow-hidden transition-all duration-300',
+              sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
             ]"
           >
-            <div class="p-4 sm:p-5 md:p-6">
-              <div class="mb-4 flex items-start justify-between gap-3">
-                <div>
-                  <h1 class="font-headline text-xl font-bold sm:text-2xl">Messages</h1>
+            <div
+              v-if="mobileConversationsOpen"
+              class="fixed inset-0 top-[72px] z-[44] bg-black/60 backdrop-blur-sm md:hidden"
+              @click="mobileConversationsOpen = false"
+            ></div>
+
+            <section
+              :class="[
+                'flex min-w-0 flex-col border-r border-outline-variant/10 bg-surface-container-lowest transition-transform duration-300',
+                'fixed left-0 top-[72px] z-[45] h-[calc(100vh-72px)] w-[88vw] max-w-sm',
+                mobileConversationsOpen ? 'translate-x-0' : '-translate-x-full',
+                'md:static md:z-auto md:h-full md:w-80 md:translate-x-0 lg:w-96'
+              ]"
+            >
+              <div class="p-4 sm:p-5 md:p-6">
+                <div class="mb-4 flex items-start justify-between gap-3">
+                  <div>
+                    <h1 class="font-headline text-xl font-bold sm:text-2xl">Messages</h1>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="rounded-full p-2 text-on-surface-variant transition hover:bg-surface-container-high hover:text-white md:hidden"
+                    @click="mobileConversationsOpen = false"
+                  >
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+
+                <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div class="flex items-center gap-2 self-start sm:self-auto">
+                    <button
+                      type="button"
+                      class="rounded-full bg-surface-container-high px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-on-surface transition hover:bg-surface-bright"
+                      @click="openFollowingPopup"
+                    >
+                      Following
+                    </button>
+
+                    <button
+                      type="button"
+                      class="rounded-full bg-primary px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-on-primary shadow-[0_0_12px_rgba(246,128,255,0.25)] transition hover:scale-105 active:scale-95"
+                      @click="openUsersPopup"
+                    >
+                      New Chat
+                    </button>
+                  </div>
+                </div>
+
+                <div class="relative">
+                  <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant">
+                    search
+                  </span>
+                  <input
+                    v-model="search"
+                    type="text"
+                    placeholder="Search conversations..."
+                    class="w-full rounded-xl border-none bg-surface-container-low py-3 pl-10 pr-4 text-sm text-white placeholder:text-on-surface-variant/50 focus:ring-1 focus:ring-primary/50"
+                  />
+                </div>
+              </div>
+
+              <div class="conversation-scroll min-h-0 flex-1 space-y-1 overflow-y-auto px-2 pb-4">
+                <div
+                  v-if="conversationsLoading"
+                  v-for="n in 4"
+                  :key="`conv-skeleton-${n}`"
+                  class="flex animate-pulse items-center gap-4 p-4 opacity-40"
+                >
+                  <div class="h-12 w-12 rounded-full bg-surface-container-high"></div>
+                  <div class="flex-1">
+                    <div class="mb-2 flex items-center justify-between">
+                      <div class="h-3 w-24 rounded bg-surface-container-high"></div>
+                      <div class="h-2 w-8 rounded bg-surface-container-high"></div>
+                    </div>
+                    <div class="h-2 w-40 rounded bg-surface-container-high"></div>
+                  </div>
+                </div>
+
+                <div
+                  v-else-if="filteredConversations.length === 0"
+                  class="px-4 py-8 text-center text-sm text-on-surface-variant"
+                >
+                  No conversations found.
                 </div>
 
                 <button
+                  v-else
+                  v-for="conversation in filteredConversations"
+                  :key="conversation.participant?.id"
                   type="button"
-                  class="rounded-full p-2 text-on-surface-variant transition hover:bg-surface-container-high hover:text-white md:hidden"
-                  @click="mobileConversationsOpen = false"
+                  class="group relative w-full rounded-2xl p-4 text-left transition-all"
+                  :class="conversationClasses(conversation)"
+                  @click="openConversation(conversation.participant)"
                 >
-                  <span class="material-symbols-outlined">close</span>
-                </button>
-              </div>
+                  <div
+                    v-if="activeParticipantId === conversation.participant?.id"
+                    class="absolute bottom-0 left-0 top-0 w-1 bg-primary"
+                  ></div>
 
-              <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div class="flex items-center gap-2 self-start sm:self-auto">
-                  <button
-                    type="button"
-                    class="rounded-full bg-surface-container-high px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-on-surface transition hover:bg-surface-bright"
-                    @click="openFollowingPopup"
-                  >
-                    Following
-                  </button>
+                  <div
+                    v-else-if="conversation.has_unread"
+                    class="absolute bottom-3 left-3 top-3 w-[3px] rounded-full bg-primary/80"
+                  ></div>
 
-                  <button
-                    type="button"
-                    class="rounded-full bg-primary px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-on-primary shadow-[0_0_12px_rgba(246,128,255,0.25)] transition hover:scale-105 active:scale-95"
-                    @click="openUsersPopup"
-                  >
-                    New Chat
-                  </button>
-                </div>
-              </div>
-
-              <div class="relative">
-                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant">
-                  search
-                </span>
-                <input
-                  v-model="search"
-                  type="text"
-                  placeholder="Search conversations..."
-                  class="w-full rounded-xl border-none bg-surface-container-low py-3 pl-10 pr-4 text-sm text-white placeholder:text-on-surface-variant/50 focus:ring-1 focus:ring-primary/50"
-                />
-              </div>
-            </div>
-
-            <div class="conversation-scroll flex-1 space-y-1 overflow-y-auto px-2 pb-4">
-              <div
-                v-if="conversationsLoading"
-                v-for="n in 4"
-                :key="`conv-skeleton-${n}`"
-                class="flex animate-pulse items-center gap-4 p-4 opacity-40"
-              >
-                <div class="h-12 w-12 rounded-full bg-surface-container-high"></div>
-                <div class="flex-1">
-                  <div class="mb-2 flex items-center justify-between">
-                    <div class="h-3 w-24 rounded bg-surface-container-high"></div>
-                    <div class="h-2 w-8 rounded bg-surface-container-high"></div>
-                  </div>
-                  <div class="h-2 w-40 rounded bg-surface-container-high"></div>
-                </div>
-              </div>
-
-              <div
-                v-else-if="filteredConversations.length === 0"
-                class="px-4 py-8 text-center text-sm text-on-surface-variant"
-              >
-                No conversations found.
-              </div>
-
-              <button
-                v-else
-                v-for="conversation in filteredConversations"
-                :key="conversation.participant?.id"
-                type="button"
-                class="group relative w-full rounded-2xl p-4 text-left transition-all"
-                :class="conversationClasses(conversation)"
-                @click="openConversation(conversation.participant)"
-              >
-                <div
-                  v-if="activeParticipantId === conversation.participant?.id"
-                  class="absolute bottom-0 left-0 top-0 w-1 bg-primary"
-                ></div>
-
-                <div
-                  v-else-if="conversation.has_unread"
-                  class="absolute bottom-3 left-3 top-3 w-[3px] rounded-full bg-primary/80"
-                ></div>
-
-                <div class="flex items-center gap-4">
-                  <div class="relative shrink-0">
-                    <template v-if="getAvatarUrl(conversation.participant?.avatar)">
-                      <img
-                        :src="getAvatarUrl(conversation.participant?.avatar)"
-                        :alt="conversation.participant?.name || 'User avatar'"
-                        class="h-12 w-12 rounded-full object-cover"
-                        :class="activeParticipantId === conversation.participant?.id
-                          ? 'ring-2 ring-primary/20'
-                          : conversation.has_unread
-                            ? 'ring-2 ring-primary/30'
-                            : 'grayscale group-hover:grayscale-0'"
-                      />
-                    </template>
-
-                    <template v-else>
-                      <div
-                        class="flex h-12 w-12 items-center justify-center rounded-full border-2 text-sm font-bold uppercase"
-                        :class="activeParticipantId === conversation.participant?.id
-                          ? 'border-primary/30 bg-zinc-900 text-white'
-                          : conversation.has_unread
-                            ? 'border-primary/30 bg-zinc-900 text-white'
-                            : 'border-white/10 bg-zinc-900 text-white'"
-                      >
-                        {{ getInitials(conversation.participant?.name) }}
-                      </div>
-                    </template>
-
-                    <span
-                      v-if="conversation.has_unread"
-                      class="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full bg-primary ring-2 ring-surface-container-lowest"
-                    ></span>
-                  </div>
-
-                  <div class="min-w-0 flex-1">
-                    <div class="mb-0.5 flex items-center justify-between gap-3">
-                      <span
-                        class="truncate font-headline text-sm font-bold transition-colors"
-                        :class="activeParticipantId === conversation.participant?.id
-                          ? 'text-white'
-                          : conversation.has_unread
-                            ? 'text-white'
-                            : 'text-on-surface-variant group-hover:text-white'"
-                      >
-                        {{ conversation.participant?.name || 'Unknown user' }}
-                      </span>
-
-                      <span
-                        class="shrink-0 text-[10px]"
-                        :class="conversation.has_unread ? 'text-primary' : 'text-on-surface-variant'"
-                      >
-                        {{ formatConversationTime(conversation.last_message?.created_at) }}
-                      </span>
-                    </div>
-
-                    <div class="mb-1 truncate text-[11px] text-on-surface-variant/70">
-                      {{ conversation.participant?.email || 'No email' }}
-                    </div>
-
-                    <div class="flex items-center justify-between gap-3">
-                      <div
-                        class="truncate text-xs"
-                        :class="conversation.has_unread
-                          ? 'font-semibold text-white'
-                          : 'text-on-surface-variant'"
-                      >
-                        {{ conversation.last_message?.content || 'No messages yet' }}
-                      </div>
-
-                      <div
-                        v-if="conversation.unread_count > 0"
-                        class="flex min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-on-primary-fixed shadow-[0_0_8px_rgba(246,128,255,0.8)]"
-                      >
-                        {{ conversation.unread_count }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </button>
-            </div>
-          </section>
-
-          <!-- Right: Chat -->
-          <section class="flex min-w-0 flex-1 flex-col bg-surface">
-            <template v-if="activeParticipant">
-              <div class="flex h-20 min-w-0 items-center justify-between gap-3 bg-surface-container/30 px-4 backdrop-blur-md sm:px-6 lg:px-8">
-                <div class="flex min-w-0 items-center gap-3">
-                  <button
-                    type="button"
-                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-container-high text-white transition hover:bg-surface-bright md:hidden"
-                    @click="toggleConversationDrawer"
-                  >
-                    <span class="material-symbols-outlined">forum</span>
-                  </button>
-
-                  <RouterLink
-                    :to="`/profile/${activeParticipant.id}`"
-                    class="flex min-w-0 items-center gap-4 transition hover:opacity-90"
-                  >
+                  <div class="flex items-center gap-4">
                     <div class="relative shrink-0">
-                      <template v-if="getAvatarUrl(activeParticipant.avatar)">
+                      <template v-if="getAvatarUrl(conversation.participant?.avatar)">
                         <img
-                          :src="getAvatarUrl(activeParticipant.avatar)"
-                          :alt="activeParticipant.name || 'Participant avatar'"
-                          class="h-10 w-10 rounded-full object-cover ring-2 ring-primary/40"
+                          :src="getAvatarUrl(conversation.participant?.avatar)"
+                          :alt="conversation.participant?.name || 'User avatar'"
+                          class="h-12 w-12 rounded-full object-cover"
+                          :class="activeParticipantId === conversation.participant?.id
+                            ? 'ring-2 ring-primary/20'
+                            : conversation.has_unread
+                              ? 'ring-2 ring-primary/30'
+                              : 'grayscale group-hover:grayscale-0'"
                         />
                       </template>
 
                       <template v-else>
-                        <div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary/30 bg-zinc-900 text-sm font-bold uppercase text-white">
-                          {{ getInitials(activeParticipant.name) }}
+                        <div
+                          class="flex h-12 w-12 items-center justify-center rounded-full border-2 text-sm font-bold uppercase"
+                          :class="activeParticipantId === conversation.participant?.id
+                            ? 'border-primary/30 bg-zinc-900 text-white'
+                            : conversation.has_unread
+                              ? 'border-primary/30 bg-zinc-900 text-white'
+                              : 'border-white/10 bg-zinc-900 text-white'"
+                        >
+                          {{ getInitials(conversation.participant?.name) }}
                         </div>
                       </template>
+
+                      <span
+                        v-if="conversation.has_unread"
+                        class="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full bg-primary ring-2 ring-surface-container-lowest"
+                      ></span>
                     </div>
 
-                    <div class="min-w-0">
-                      <h2 class="truncate font-headline text-base font-bold text-white transition hover:text-primary sm:text-lg">
-                        {{ activeParticipant.name }}
-                      </h2>
-                      <p class="truncate text-xs text-on-surface-variant">
-                        {{ activeParticipant.email }}
-                      </p>
+                    <div class="min-w-0 flex-1">
+                      <div class="mb-0.5 flex items-center justify-between gap-3">
+                        <span
+                          class="truncate font-headline text-sm font-bold transition-colors"
+                          :class="activeParticipantId === conversation.participant?.id
+                            ? 'text-white'
+                            : conversation.has_unread
+                              ? 'text-white'
+                              : 'text-on-surface-variant group-hover:text-white'"
+                        >
+                          {{ conversation.participant?.name || 'Unknown user' }}
+                        </span>
+
+                        <span
+                          class="shrink-0 text-[10px]"
+                          :class="conversation.has_unread ? 'text-primary' : 'text-on-surface-variant'"
+                        >
+                          {{ formatConversationTime(conversation.last_message?.created_at) }}
+                        </span>
+                      </div>
+
+                      <div class="mb-1 truncate text-[11px] text-on-surface-variant/70">
+                        {{ conversation.participant?.email || 'No email' }}
+                      </div>
+
+                      <div class="flex items-center justify-between gap-3">
+                        <div
+                          class="truncate text-xs"
+                          :class="conversation.has_unread
+                            ? 'font-semibold text-white'
+                            : 'text-on-surface-variant'"
+                        >
+                          {{ conversation.last_message?.content || 'No messages yet' }}
+                        </div>
+
+                        <div
+                          v-if="conversation.unread_count > 0"
+                          class="flex min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-on-primary-fixed shadow-[0_0_8px_rgba(246,128,255,0.8)]"
+                        >
+                          {{ conversation.unread_count }}
+                        </div>
+                      </div>
                     </div>
-                  </RouterLink>
-                </div>
+                  </div>
+                </button>
               </div>
+            </section>
 
-              <div
-                ref="messagesContainer"
-                class="messages-scroll flex flex-1 flex-col space-y-5 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8"
-              >
-                <div v-if="messagesLoading" class="space-y-5">
-                  <div
-                    v-for="n in 4"
-                    :key="`msg-skeleton-${n}`"
-                    class="flex max-w-[88%] animate-pulse items-end gap-3 opacity-20 sm:max-w-[76%]"
-                  >
-                    <div class="h-8 w-8 rounded-full bg-surface-container-high"></div>
-                    <div class="h-12 w-full rounded-2xl rounded-bl-none bg-surface-container-high"></div>
-                  </div>
-                </div>
+            <section class="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-surface">
+              <template v-if="activeParticipant">
+                <div class="flex h-20 min-w-0 shrink-0 items-center justify-between gap-3 bg-surface-container/30 px-4 backdrop-blur-md sm:px-6 lg:px-8">
+                  <div class="flex min-w-0 items-center gap-3">
+                    <button
+                      type="button"
+                      class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-container-high text-white transition hover:bg-surface-bright md:hidden"
+                      @click="toggleConversationDrawer"
+                    >
+                      <span class="material-symbols-outlined">forum</span>
+                    </button>
 
-                <div
-                  v-else-if="messages.length === 0"
-                  class="flex h-full items-center justify-center text-center text-sm text-on-surface-variant"
-                >
-                  No messages yet. Start the conversation.
-                </div>
-
-                <template v-else>
-                  <div class="self-center">
-                    <span class="rounded-full bg-surface-container-high px-3 py-1 text-[10px] font-medium uppercase tracking-widest text-on-surface-variant">
-                      Conversation
-                    </span>
-                  </div>
-
-                  <div
-                    v-for="message in messages"
-                    :key="message.id"
-                    class="flex w-full items-end gap-3"
-                    :class="isMyMessage(message) ? 'justify-end' : 'justify-start'"
-                  >
-                    <template v-if="!isMyMessage(message)">
-                      <RouterLink :to="`/profile/${message.sender?.id}`" class="block shrink-0 self-end">
-                        <template v-if="getAvatarUrl(message.sender?.avatar)">
+                    <RouterLink
+                      :to="`/profile/${activeParticipant.id}`"
+                      class="flex min-w-0 items-center gap-4 transition hover:opacity-90"
+                    >
+                      <div class="relative shrink-0">
+                        <template v-if="getAvatarUrl(activeParticipant.avatar)">
                           <img
-                            :src="getAvatarUrl(message.sender?.avatar)"
-                            :alt="message.sender?.name || 'Sender avatar'"
-                            class="h-8 w-8 rounded-full object-cover"
+                            :src="getAvatarUrl(activeParticipant.avatar)"
+                            :alt="activeParticipant.name || 'Participant avatar'"
+                            class="h-10 w-10 rounded-full object-cover ring-2 ring-primary/40"
                           />
                         </template>
 
                         <template v-else>
-                          <div class="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-zinc-900 text-[10px] font-bold uppercase text-white">
-                            {{ getInitials(message.sender?.name) }}
+                          <div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary/30 bg-zinc-900 text-sm font-bold uppercase text-white">
+                            {{ getInitials(activeParticipant.name) }}
                           </div>
                         </template>
-                      </RouterLink>
-                    </template>
+                      </div>
+
+                      <div class="min-w-0">
+                        <h2 class="truncate font-headline text-base font-bold text-white transition hover:text-primary sm:text-lg">
+                          {{ activeParticipant.name }}
+                        </h2>
+                        <p class="truncate text-xs text-on-surface-variant">
+                          {{ activeParticipant.email }}
+                        </p>
+                      </div>
+                    </RouterLink>
+                  </div>
+                </div>
+
+                <div
+                  ref="messagesContainer"
+                  class="messages-scroll min-h-0 flex flex-1 flex-col space-y-5 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8"
+                >
+                  <div v-if="messagesLoading" class="space-y-5">
+                    <div
+                      v-for="n in 4"
+                      :key="`msg-skeleton-${n}`"
+                      class="flex max-w-[88%] animate-pulse items-end gap-3 opacity-20 sm:max-w-[76%]"
+                    >
+                      <div class="h-8 w-8 rounded-full bg-surface-container-high"></div>
+                      <div class="h-12 w-full rounded-2xl rounded-bl-none bg-surface-container-high"></div>
+                    </div>
+                  </div>
+
+                  <div
+                    v-else-if="messages.length === 0"
+                    class="flex h-full items-center justify-center text-center text-sm text-on-surface-variant"
+                  >
+                    No messages yet. Start the conversation.
+                  </div>
+
+                  <template v-else>
+                    <div class="self-center">
+                      <span class="rounded-full bg-surface-container-high px-3 py-1 text-[10px] font-medium uppercase tracking-widest text-on-surface-variant">
+                        Conversation
+                      </span>
+                    </div>
 
                     <div
-                      class="message-bubble w-fit max-w-[92%] whitespace-pre-wrap break-words px-4 py-3 text-sm shadow-lg sm:max-w-[80%] sm:px-5 sm:py-4"
-                      :class="isMyMessage(message)
-                        ? 'ml-auto rounded-[22px] rounded-br-md bg-gradient-to-br from-fuchsia-600 to-purple-600 text-white shadow-[0_6px_24px_rgba(246,128,255,0.22)]'
-                        : 'rounded-[22px] rounded-bl-md bg-surface-container-high text-white'"
+                      v-for="message in messages"
+                      :key="message.id"
+                      class="flex w-full items-end gap-3"
+                      :class="isMyMessage(message) ? 'justify-end' : 'justify-start'"
                     >
-                      <div class="leading-6">
-                        {{ message.content }}
-                      </div>
+                      <template v-if="!isMyMessage(message)">
+                        <RouterLink :to="`/profile/${message.sender?.id}`" class="block shrink-0 self-end">
+                          <template v-if="getAvatarUrl(message.sender?.avatar)">
+                            <img
+                              :src="getAvatarUrl(message.sender?.avatar)"
+                              :alt="message.sender?.name || 'Sender avatar'"
+                              class="h-8 w-8 rounded-full object-cover"
+                            />
+                          </template>
+
+                          <template v-else>
+                            <div class="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-zinc-900 text-[10px] font-bold uppercase text-white">
+                              {{ getInitials(message.sender?.name) }}
+                            </div>
+                          </template>
+                        </RouterLink>
+                      </template>
 
                       <div
-                        class="mt-2 flex justify-end text-[9px]"
-                        :class="isMyMessage(message) ? 'text-fuchsia-200' : 'text-on-surface-variant'"
+                        class="message-bubble w-fit max-w-[92%] whitespace-pre-wrap break-words px-4 py-3 text-sm shadow-lg sm:max-w-[80%] sm:px-5 sm:py-4"
+                        :class="isMyMessage(message)
+                          ? 'ml-auto rounded-[22px] rounded-br-md bg-gradient-to-br from-fuchsia-600 to-purple-600 text-white shadow-[0_6px_24px_rgba(246,128,255,0.22)]'
+                          : 'rounded-[22px] rounded-bl-md bg-surface-container-high text-white'"
                       >
-                        {{ formatMessageTime(message.created_at) }}
+                        <div class="leading-6">
+                          {{ message.content }}
+                        </div>
+
+                        <div
+                          class="mt-2 flex justify-end text-[9px]"
+                          :class="isMyMessage(message) ? 'text-fuchsia-200' : 'text-on-surface-variant'"
+                        >
+                          {{ formatMessageTime(message.created_at) }}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </template>
-              </div>
+                  </template>
+                </div>
 
-              <div class="bg-surface-container/30 p-3 backdrop-blur-md sm:p-4 lg:p-6">
-                <p v-if="sendError" class="mb-3 text-sm text-error">
-                  {{ sendError }}
-                </p>
+                <div class="shrink-0 border-t border-outline-variant/10 bg-surface-container/30 p-3 backdrop-blur-md sm:p-4 lg:p-6">
+                  <p v-if="sendError" class="mb-3 text-sm text-error">
+                    {{ sendError }}
+                  </p>
 
-                <div class="relative flex items-center gap-2 rounded-2xl bg-surface-container-low p-2 ring-1 ring-white/5 sm:gap-3">
-                  <button
-                    type="button"
-                    class="flex h-10 w-10 shrink-0 items-center justify-center text-on-surface-variant transition-colors hover:text-primary"
-                  >
-                    <span class="material-symbols-outlined">add_circle</span>
-                  </button>
-
-                  <input
-                    v-model="messageForm.content"
-                    type="text"
-                    placeholder="Type your message..."
-                    class="min-w-0 flex-1 border-none bg-transparent py-2 text-sm text-white placeholder:text-on-surface-variant/40 focus:ring-0"
-                    @keydown.enter.prevent="sendMessage"
-                  />
-
-                  <div class="relative shrink-0">
+                  <div class="relative flex items-center gap-2 rounded-2xl bg-surface-container-low p-2 ring-1 ring-white/5 sm:gap-3">
                     <button
                       type="button"
-                      class="flex h-10 w-10 items-center justify-center text-on-surface-variant transition-colors hover:text-primary"
-                      @click="toggleEmojiPicker"
+                      class="flex h-10 w-10 shrink-0 items-center justify-center text-on-surface-variant transition-colors hover:text-primary"
                     >
-                      <span class="material-symbols-outlined">mood</span>
+                      <span class="material-symbols-outlined">add_circle</span>
                     </button>
 
-                    <div
-                      v-if="showEmojiPicker"
-                      class="absolute bottom-14 right-0 z-30 w-56 rounded-2xl border border-white/10 bg-surface-container p-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)] sm:w-64"
-                    >
-                      <div class="grid grid-cols-6 gap-2">
-                        <button
-                          v-for="emoji in emojis"
-                          :key="emoji"
-                          type="button"
-                          class="rounded-xl p-2 text-xl transition hover:bg-surface-container-high"
-                          @click="appendEmoji(emoji)"
-                        >
-                          {{ emoji }}
-                        </button>
+                    <input
+                      v-model="messageForm.content"
+                      type="text"
+                      placeholder="Type your message..."
+                      class="min-w-0 flex-1 border-none bg-transparent py-2 text-sm text-white placeholder:text-on-surface-variant/40 focus:ring-0"
+                      @keydown.enter.prevent="sendMessage"
+                    />
+
+                    <div class="relative shrink-0">
+                      <button
+                        type="button"
+                        class="flex h-10 w-10 items-center justify-center text-on-surface-variant transition-colors hover:text-primary"
+                        @click="toggleEmojiPicker"
+                      >
+                        <span class="material-symbols-outlined">mood</span>
+                      </button>
+
+                      <div
+                        v-if="showEmojiPicker"
+                        class="absolute bottom-14 right-0 z-30 w-56 rounded-2xl border border-white/10 bg-surface-container p-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)] sm:w-64"
+                      >
+                        <div class="grid grid-cols-6 gap-2">
+                          <button
+                            v-for="emoji in emojis"
+                            :key="emoji"
+                            type="button"
+                            class="rounded-xl p-2 text-xl transition hover:bg-surface-container-high"
+                            @click="appendEmoji(emoji)"
+                          >
+                            {{ emoji }}
+                          </button>
+                        </div>
                       </div>
                     </div>
+
+                    <button
+                      type="button"
+                      :disabled="sendLoading || !messageForm.content.trim() || !activeParticipant"
+                      class="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary shadow-[0_0_15px_rgba(246,128,255,0.4)] transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                      @click="sendMessage"
+                    >
+                      <span
+                        class="material-symbols-outlined font-bold"
+                        style="font-variation-settings: 'FILL' 1;"
+                      >
+                        send
+                      </span>
+                    </button>
                   </div>
+                </div>
+              </template>
+
+              <template v-else>
+                <div class="flex flex-1 flex-col items-center justify-center bg-surface p-8 text-center">
+                  <div class="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-primary/5 ring-1 ring-primary/20 shadow-[0_0_50px_rgba(246,128,255,0.1)]">
+                    <span
+                      class="material-symbols-outlined text-5xl text-primary"
+                      style="font-variation-settings: 'FILL' 1;"
+                    >
+                      forum
+                    </span>
+                  </div>
+
+                  <h3 class="mb-2 font-headline text-2xl font-bold text-white">
+                    No conversation selected
+                  </h3>
+
+                  <p class="max-w-xs text-sm leading-relaxed text-on-surface-variant">
+                    Choose a conversation from the list or start a new one from the popups.
+                  </p>
 
                   <button
                     type="button"
-                    :disabled="sendLoading || !messageForm.content.trim() || !activeParticipant"
-                    class="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary shadow-[0_0_15px_rgba(246,128,255,0.4)] transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
-                    @click="sendMessage"
+                    class="mt-5 rounded-full bg-primary px-5 py-3 text-sm font-bold uppercase tracking-widest text-on-primary shadow-[0_0_15px_rgba(246,128,255,0.25)] transition hover:scale-105 active:scale-95 md:hidden"
+                    @click="openConversationDrawer"
                   >
-                    <span
-                      class="material-symbols-outlined font-bold"
-                      style="font-variation-settings: 'FILL' 1;"
-                    >
-                      send
-                    </span>
+                    Open Conversations
                   </button>
                 </div>
-              </div>
-            </template>
-
-            <template v-else>
-              <div class="flex flex-1 flex-col items-center justify-center bg-surface p-8 text-center">
-                <div class="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-primary/5 ring-1 ring-primary/20 shadow-[0_0_50px_rgba(246,128,255,0.1)]">
-                  <span
-                    class="material-symbols-outlined text-5xl text-primary"
-                    style="font-variation-settings: 'FILL' 1;"
-                  >
-                    forum
-                  </span>
-                </div>
-
-                <h3 class="mb-2 font-headline text-2xl font-bold text-white">
-                  No conversation selected
-                </h3>
-
-                <p class="max-w-xs text-sm leading-relaxed text-on-surface-variant">
-                  Choose a conversation from the list or start a new one from the popups.
-                </p>
-
-                <button
-                  type="button"
-                  class="mt-5 rounded-full bg-primary px-5 py-3 text-sm font-bold uppercase tracking-widest text-on-primary shadow-[0_0_15px_rgba(246,128,255,0.25)] transition hover:scale-105 active:scale-95 md:hidden"
-                  @click="openConversationDrawer"
-                >
-                  Open Conversations
-                </button>
-              </div>
-            </template>
-          </section>
-        </main>
+              </template>
+            </section>
+          </main>
+        </div>
       </div>
 
-      <!-- All Users Popup -->
       <div
         v-if="showUsersPopup"
         class="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
@@ -526,7 +525,6 @@
         </div>
       </div>
 
-      <!-- Following Popup -->
       <div
         v-if="showFollowingPopup"
         class="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
@@ -662,6 +660,8 @@ const usersPopupSearch = ref('')
 const followingPopupSearch = ref('')
 
 const messagesContainer = ref(null)
+const conversationsPollIntervalId = ref(null)
+const messagesPollIntervalId = ref(null)
 
 const messageForm = ref({
   content: '',
@@ -671,13 +671,17 @@ const emojis = ['😀', '😂', '😍', '🔥', '👍', '❤️', '😎', '😭'
 
 const getStoredUser = () => {
   try {
-    return JSON.parse(localStorage.getItem('user') || 'null')
+    const stored = JSON.parse(localStorage.getItem('user') || 'null')
+    return stored?.user || stored || null
   } catch {
     return null
   }
 }
 
 const authUser = ref(getStoredUser())
+
+const APP_URL = (import.meta.env.VITE_APP_URL || 'http://localhost:8000').replace(/\/$/, '')
+const STORAGE_BASE = `${APP_URL}/storage`
 
 const normalizeCollection = (payload) => {
   if (Array.isArray(payload)) return payload
@@ -691,9 +695,46 @@ const targetUserIdFromQuery = computed(() => {
 })
 
 const buildStorageUrl = (path) => {
-  if (!path) return null
-  if (path.startsWith('http')) return path
-  return `http://localhost:8000/storage/${path}`
+  if (!path || typeof path !== 'string') return null
+
+  const value = path.trim()
+  if (!value) return null
+
+  if (value.startsWith('http://nginx/storage/')) {
+    return value.replace('http://nginx/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('https://nginx/storage/')) {
+    return value.replace('https://nginx/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('http://app/storage/')) {
+    return value.replace('http://app/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('https://app/storage/')) {
+    return value.replace('https://app/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('http://localhost/storage/')) {
+    return value.replace('http://localhost/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('https://localhost/storage/')) {
+    return value.replace('https://localhost/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    return value
+  }
+
+  const clean = value.replace(/^\/+/, '')
+
+  if (clean.startsWith('storage/')) {
+    return `${APP_URL}/${clean}`
+  }
+
+  return `${STORAGE_BASE}/${clean}`
 }
 
 const getAvatarUrl = (avatar) => {
@@ -844,17 +885,44 @@ const scrollToBottom = async () => {
   }
 }
 
-const loadConversations = async () => {
-  conversationsLoading.value = true
+const sortConversationsByLastMessage = (list) => {
+  return [...list].sort((a, b) => {
+    const first = new Date(b.last_message?.created_at || 0).getTime()
+    const second = new Date(a.last_message?.created_at || 0).getTime()
+    return first - second
+  })
+}
+
+const loadConversations = async ({ silent = false } = {}) => {
+  if (!silent) {
+    conversationsLoading.value = true
+  }
 
   try {
     const response = await api.get('/messages/conversations')
-    conversations.value = normalizeCollection(response.data?.data)
+    const incoming = sortConversationsByLastMessage(normalizeCollection(response.data?.data))
+
+    conversations.value = incoming
+
+    if (activeParticipantId.value) {
+      const activeConversation = incoming.find(
+        (conversation) => Number(conversation.participant?.id) === Number(activeParticipantId.value)
+      )
+
+      if (activeConversation?.participant) {
+        activeParticipant.value = activeConversation.participant
+      }
+    }
   } catch (error) {
     console.error('Failed to load conversations', error)
-    conversations.value = []
+
+    if (!silent) {
+      conversations.value = []
+    }
   } finally {
-    conversationsLoading.value = false
+    if (!silent) {
+      conversationsLoading.value = false
+    }
   }
 }
 
@@ -888,25 +956,36 @@ const loadFollowing = async () => {
   }
 }
 
-const loadMessages = async (participant) => {
-  if (!participant?.id) return
+const loadMessages = async (participant, { silent = false } = {}) => {
+  const participantId = Number(participant?.id || activeParticipantId.value)
 
-  messagesLoading.value = true
-  sendError.value = ''
+  if (!participantId) return
+
+  if (!silent) {
+    messagesLoading.value = true
+    sendError.value = ''
+  }
 
   try {
-    const response = await api.get(`/messages/messages/${participant.id}`)
+    const previousLastMessageId = messages.value.length
+      ? Number(messages.value[messages.value.length - 1]?.id)
+      : null
 
-    activeParticipant.value = response.data?.participant || participant
-    activeParticipantId.value = participant.id
-    messages.value = normalizeCollection(response.data)
+    const response = await api.get(`/messages/messages/${participantId}`)
+    const incomingMessages = normalizeCollection(response.data)
+    const incomingParticipant = response.data?.participant || participant || activeParticipant.value
+
+    activeParticipant.value = incomingParticipant
+    activeParticipantId.value = participantId
+    messages.value = incomingMessages
 
     conversations.value = conversations.value.map((conversation) => {
-      if (Number(conversation.participant?.id) === Number(participant.id)) {
+      if (Number(conversation.participant?.id) === participantId) {
         return {
           ...conversation,
           unread_count: 0,
           has_unread: false,
+          participant: conversation.participant || incomingParticipant,
           last_message: conversation.last_message
             ? {
                 ...conversation.last_message,
@@ -919,12 +998,23 @@ const loadMessages = async (participant) => {
       return conversation
     })
 
-    await scrollToBottom()
+    const nextLastMessageId = incomingMessages.length
+      ? Number(incomingMessages[incomingMessages.length - 1]?.id)
+      : null
+
+    if (nextLastMessageId && nextLastMessageId !== previousLastMessageId) {
+      await scrollToBottom()
+    }
   } catch (error) {
     console.error('Failed to load messages', error)
-    messages.value = []
+
+    if (!silent) {
+      messages.value = []
+    }
   } finally {
-    messagesLoading.value = false
+    if (!silent) {
+      messagesLoading.value = false
+    }
   }
 }
 
@@ -1027,11 +1117,7 @@ const sendMessage = async () => {
         return conversation
       })
 
-      conversations.value = [...conversations.value].sort((a, b) => {
-        const first = new Date(b.last_message?.created_at || 0).getTime()
-        const second = new Date(a.last_message?.created_at || 0).getTime()
-        return first - second
-      })
+      conversations.value = sortConversationsByLastMessage(conversations.value)
     }
 
     messageForm.value.content = ''
@@ -1109,6 +1195,38 @@ const startChatFromPopup = async (user, source = 'users') => {
   await openConversation(participant)
 }
 
+const startConversationsPolling = () => {
+  stopConversationsPolling()
+
+  conversationsPollIntervalId.value = window.setInterval(() => {
+    loadConversations({ silent: true })
+  }, 3000)
+}
+
+const stopConversationsPolling = () => {
+  if (conversationsPollIntervalId.value) {
+    clearInterval(conversationsPollIntervalId.value)
+    conversationsPollIntervalId.value = null
+  }
+}
+
+const startMessagesPolling = () => {
+  stopMessagesPolling()
+
+  if (!activeParticipantId.value) return
+
+  messagesPollIntervalId.value = window.setInterval(() => {
+    loadMessages({ id: activeParticipantId.value }, { silent: true })
+  }, 2000)
+}
+
+const stopMessagesPolling = () => {
+  if (messagesPollIntervalId.value) {
+    clearInterval(messagesPollIntervalId.value)
+    messagesPollIntervalId.value = null
+  }
+}
+
 watch(
   () => route.query.user,
   async () => {
@@ -1116,11 +1234,21 @@ watch(
   }
 )
 
+watch(activeParticipantId, (value) => {
+  if (value) {
+    startMessagesPolling()
+  } else {
+    stopMessagesPolling()
+  }
+})
+
 onMounted(async () => {
   handleResize()
   window.addEventListener('resize', handleResize)
 
   await Promise.all([loadConversations(), loadUsers(), loadFollowing()])
+  startConversationsPolling()
+
   await maybeOpenQueryUserConversation()
 
   if (!activeParticipant.value && conversations.value.length > 0) {
@@ -1129,6 +1257,8 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  stopConversationsPolling()
+  stopMessagesPolling()
   window.removeEventListener('resize', handleResize)
   document.body.style.overflow = ''
 })
