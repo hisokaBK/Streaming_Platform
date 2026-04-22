@@ -224,6 +224,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import api from '@/services/api'
+import { useNotificationsRealtime } from '@/composables/useNotificationsRealtime'
 import TopNavbar from '@/components/layout/TopNavbar.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 
@@ -235,6 +236,7 @@ const loading = ref(false)
 const generalError = ref('')
 const markAllLoading = ref(false)
 const markOneLoadingId = ref(null)
+const pollIntervalId = ref(null)
 
 const meta = ref({
   current_page: 1,
@@ -242,6 +244,23 @@ const meta = ref({
   per_page: 10,
   total: 0,
 })
+
+const getStoredUser = () => {
+  try {
+    const stored = JSON.parse(localStorage.getItem('user') || 'null')
+    return stored?.user || stored || null
+  } catch {
+    return null
+  }
+}
+
+const getAuthUserId = () => {
+  const user = getStoredUser()
+  return user?.id || null
+}
+
+const { subscribeToNotificationChannel, unsubscribeFromNotificationChannel } =
+  useNotificationsRealtime(notifications, getAuthUserId, meta)
 
 const buildStorageUrl = (path) => {
   if (!path) return null
@@ -302,14 +321,14 @@ const visiblePages = computed(() => {
 
 const formatNotificationDate = (value) => {
   if (!value) return 'Unknown time'
-
-  const date = new Date(value)
-  return date.toLocaleString()
+  return new Date(value).toLocaleString()
 }
 
-const loadNotifications = async (page = 1) => {
-  loading.value = true
-  generalError.value = ''
+const loadNotifications = async (page = 1, { silent = false } = {}) => {
+  if (!silent) {
+    loading.value = true
+    generalError.value = ''
+  }
 
   try {
     const response = await api.get(`/notification/notifications?page=${page}`)
@@ -323,11 +342,31 @@ const loadNotifications = async (page = 1) => {
     }
   } catch (error) {
     console.error('Failed to load notifications', error)
-    notifications.value = []
-    generalError.value =
-      error.response?.data?.message || 'Failed to load notifications.'
+
+    if (!silent) {
+      notifications.value = []
+      generalError.value =
+        error.response?.data?.message || 'Failed to load notifications.'
+    }
   } finally {
-    loading.value = false
+    if (!silent) {
+      loading.value = false
+    }
+  }
+}
+
+const startPolling = () => {
+  stopPolling()
+
+  pollIntervalId.value = window.setInterval(() => {
+    loadNotifications(meta.value.current_page || 1, { silent: true })
+  }, 3000)
+}
+
+const stopPolling = () => {
+  if (pollIntervalId.value) {
+    clearInterval(pollIntervalId.value)
+    pollIntervalId.value = null
   }
 }
 
@@ -339,7 +378,7 @@ const markOneAsRead = async (notificationId) => {
     const updated = response.data?.data
 
     notifications.value = notifications.value.map((item) => {
-      if (item.id === notificationId) {
+      if (Number(item.id) === Number(notificationId)) {
         return {
           ...item,
           ...(updated || {}),
@@ -380,13 +419,22 @@ const goToPage = async (page) => {
   await loadNotifications(page)
 }
 
-onMounted(() => {
+onMounted(async () => {
   handleResize()
   window.addEventListener('resize', handleResize)
-  loadNotifications()
+
+  await loadNotifications()
+
+  if (getAuthUserId()) {
+    subscribeToNotificationChannel()
+  }
+
+  startPolling()
 })
 
 onBeforeUnmount(() => {
+  stopPolling()
+  unsubscribeFromNotificationChannel()
   window.removeEventListener('resize', handleResize)
   document.body.style.overflow = ''
 })
