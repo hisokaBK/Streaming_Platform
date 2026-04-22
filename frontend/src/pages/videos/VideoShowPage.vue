@@ -31,8 +31,9 @@
               >
                 <div class="aspect-video w-full bg-black">
                   <video
-                    v-if="video.url"
-                    :src="video.url"
+                    v-if="getVideoSrc(video)"
+                    :src="getVideoSrc(video)"
+                    :poster="getVideoPoster(video)"
                     controls
                     class="h-full w-full object-cover"
                     preload="metadata"
@@ -128,7 +129,7 @@
                     class="block shrink-0"
                   >
                     <img
-                      :src="getAvatar(video.user?.avatar, video.user?.name)"
+                      :src="getAvatar(video.user?.avatar || video.user?.avatar_url, video.user?.name)"
                       :alt="video.user?.name || 'Creator avatar'"
                       class="h-14 w-14 rounded-2xl object-cover transition hover:opacity-90 sm:h-16 sm:w-16"
                     />
@@ -298,7 +299,7 @@
                     class="block shrink-0"
                   >
                     <img
-                      :src="getAvatar(comment.user?.avatar, comment.user?.name)"
+                      :src="getAvatar(comment.user?.avatar || comment.user?.avatar_url, comment.user?.name)"
                       :alt="comment.user?.name || 'Comment user'"
                       class="h-10 w-10 rounded-lg object-cover"
                     />
@@ -367,6 +368,9 @@ const isFollowing = ref(false)
 const authUser = ref(null)
 const isMobileComments = ref(false)
 
+const APP_URL = (import.meta.env.VITE_APP_URL || 'http://localhost:8000').replace(/\/$/, '')
+const STORAGE_BASE = `${APP_URL}/storage`
+
 const reactionOptions = [
   { type: 'like', emoji: '👍' },
   { type: 'love', emoji: '❤️' },
@@ -386,10 +390,51 @@ const normalizeCollection = (payload) => {
 }
 
 const buildStorageUrl = (path) => {
-  if (!path) return null
-  if (path.startsWith('http')) return path
-  return `http://localhost:8000/storage/${path}`
+  if (!path || typeof path !== 'string') return null
+
+  const value = path.trim()
+  if (!value) return null
+
+  if (value.startsWith('http://nginx/storage/')) {
+    return value.replace('http://nginx/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('https://nginx/storage/')) {
+    return value.replace('https://nginx/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('http://app/storage/')) {
+    return value.replace('http://app/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('https://app/storage/')) {
+    return value.replace('https://app/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('http://localhost/storage/')) {
+    return value.replace('http://localhost/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('https://localhost/storage/')) {
+    return value.replace('https://localhost/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    return value
+  }
+
+  const clean = value.replace(/^\/+/, '')
+
+  if (clean.startsWith('storage/')) {
+    return `${APP_URL}/${clean}`
+  }
+
+  return `${STORAGE_BASE}/${clean}`
 }
+
+const getVideoSrc = (videoItem) => buildStorageUrl(videoItem?.url)
+const getVideoPoster = (videoItem) =>
+  buildStorageUrl(videoItem?.stream?.thumbnail || videoItem?.stream?.thumbnail_url)
 
 const getStoredUser = () => {
   try {
@@ -428,7 +473,10 @@ watch([mobileSidebarOpen, showComments, isMobileComments], ([sidebarOpen, commen
 })
 
 const getAvatar = (avatar, name = 'User') => {
-  if (avatar) return buildStorageUrl(avatar)
+  const fixedAvatar = buildStorageUrl(avatar)
+
+  if (fixedAvatar) return fixedAvatar
+
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=111111&color=ffffff&size=256`
 }
 

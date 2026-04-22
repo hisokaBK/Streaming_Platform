@@ -115,9 +115,10 @@
                   <div class="absolute inset-0 bg-gradient-to-br from-primary/20 to-tertiary/10"></div>
                   <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
 
-                  <template v-if="video.url">
+                  <template v-if="getVideoSrc(video)">
                     <video
-                      :src="video.url"
+                      :src="getVideoSrc(video)"
+                      :poster="getVideoPoster(video)"
                       class="h-full w-full object-cover"
                       muted
                       preload="metadata"
@@ -163,7 +164,7 @@
                     @click.stop
                   >
                     <img
-                      :src="getAvatar(video.user?.avatar, video.user?.name)"
+                      :src="getAvatar(video.user?.avatar || video.user?.avatar_url, video.user?.name)"
                       :alt="video.user?.name || 'Avatar'"
                       class="h-12 w-12 rounded-full border-2 border-surface-container-highest object-cover"
                     />
@@ -281,18 +282,64 @@ const meta = ref({
   total: 0,
 })
 
+const APP_URL = (import.meta.env.VITE_APP_URL || 'http://localhost:8000').replace(/\/$/, '')
+const STORAGE_BASE = `${APP_URL}/storage`
+
 const normalizeCollection = (payload) => {
   if (Array.isArray(payload)) return payload
   if (Array.isArray(payload?.data)) return payload.data
+  if (Array.isArray(payload?.categories)) return payload.categories
+  if (Array.isArray(payload?.data?.categories)) return payload.data.categories
   if (Array.isArray(payload?.data?.data)) return payload.data.data
   return []
 }
 
 const buildStorageUrl = (path) => {
-  if (!path) return null
-  if (path.startsWith('http')) return path
-  return `http://localhost:8000/storage/${path}`
+  if (!path || typeof path !== 'string') return null
+
+  const value = path.trim()
+  if (!value) return null
+
+  if (value.startsWith('http://nginx/storage/')) {
+    return value.replace('http://nginx/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('https://nginx/storage/')) {
+    return value.replace('https://nginx/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('http://app/storage/')) {
+    return value.replace('http://app/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('https://app/storage/')) {
+    return value.replace('https://app/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('http://localhost/storage/')) {
+    return value.replace('http://localhost/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('https://localhost/storage/')) {
+    return value.replace('https://localhost/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    return value
+  }
+
+  const clean = value.replace(/^\/+/, '')
+
+  if (clean.startsWith('storage/')) {
+    return `${APP_URL}/${clean}`
+  }
+
+  return `${STORAGE_BASE}/${clean}`
 }
+
+const getVideoSrc = (video) => buildStorageUrl(video?.url)
+const getVideoPoster = (video) =>
+  buildStorageUrl(video?.stream?.thumbnail || video?.stream?.thumbnail_url)
 
 const handleSidebarToggle = () => {
   if (window.innerWidth < 768) {
@@ -316,8 +363,10 @@ watch(mobileSidebarOpen, (isOpen) => {
 })
 
 const getAvatar = (avatar, name = 'User') => {
-  if (avatar) {
-    return buildStorageUrl(avatar)
+  const fixedAvatar = buildStorageUrl(avatar)
+
+  if (fixedAvatar) {
+    return fixedAvatar
   }
 
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=111111&color=ffffff&size=256`
@@ -326,9 +375,16 @@ const getAvatar = (avatar, name = 'User') => {
 const loadCategories = async () => {
   try {
     const response = await api.get('/categories')
-    categories.value = normalizeCollection(response.data)
+
+    categories.value = normalizeCollection(response.data).map((category) => ({
+      id: Number(category.id),
+      name: category.name,
+    }))
   } catch (error) {
-    console.error('Failed to load categories', error)
+    console.error('Failed to load categories', {
+      status: error.response?.status,
+      data: error.response?.data,
+    })
     categories.value = []
   }
 }
@@ -355,6 +411,12 @@ const loadVideos = async (page = 1) => {
   } catch (error) {
     console.error('Failed to load videos', error)
     videos.value = []
+    meta.value = {
+      current_page: 1,
+      last_page: 1,
+      per_page: 10,
+      total: 0,
+    }
   } finally {
     loading.value = false
   }
