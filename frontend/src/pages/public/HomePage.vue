@@ -1,6 +1,6 @@
 <template>
   <div class="dark">
-    <div class="min-h-screen bg-background text-on-background antialiased selection:bg-primary selection:text-on-primary">
+    <div class="min-h-screen bg-background text-on-surface">
       <TopNavbar @toggle-sidebar="handleSidebarToggle" />
 
       <div class="flex min-h-screen">
@@ -10,313 +10,332 @@
           @close="mobileSidebarOpen = false"
         />
 
-        <main
+        <div
           :class="[
-            'min-w-0 flex-1 overflow-x-hidden pt-[80px] transition-all duration-300',
-            sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'
+            'min-w-0 flex-1 pt-[72px] transition-all duration-300',
+            sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
           ]"
         >
-          <!-- Hero Section -->
-          <section class="relative flex min-h-[700px] items-center overflow-hidden px-4 sm:px-6 lg:min-h-[870px] lg:px-16">
-            <div class="absolute inset-0 z-0">
-              <img
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3JAgeJJDfVCBak5NoRLozoR2y7gQLurMhTsAwvGMlowRFZN4476Qc_Rnb1Rt-hu3vy4Ey9ZVyGYINagJ8iE7Z9t3vMCdvzmv14QDEZexna7PMCV2-dMSnvk1bBHh2JQgsdoXf6vq2COxT-bx5HCVdLMKY-WY3FO69V9WC8nGw46by_gZKvvwmGYHsSmkx4m2yfoYtxNw5oNkb4au_UsEnuYzAU34ij3tv-4pWdHc6wzAUW0Ig1LU2f_NJmYDj4pQ9BlMSkTcCESQ"
-                alt="Cinematic digital streaming setup"
-                class="h-full w-full object-cover opacity-40 mix-blend-luminosity"
-              />
-              <div class="absolute inset-0 bg-gradient-to-r from-background via-background/60 to-transparent"></div>
-              <div class="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
-            </div>
-
-            <div class="relative z-10 max-w-4xl">
-              <div class="mb-6 inline-flex items-center gap-2 rounded-full border border-tertiary-container/30 bg-tertiary-container/20 px-3 py-1">
-                <span class="h-2 w-2 animate-pulse rounded-full bg-tertiary"></span>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-tertiary">
-                  Live Now: Global Invitational
-                </span>
-              </div>
-
-              <h1
-                class="text-glow-magenta mb-6 font-headline text-4xl font-black leading-[0.9] tracking-tighter sm:text-5xl md:text-6xl lg:mb-8 lg:text-8xl"
-              >
-                THE DIGITAL <br />
-                <span class="bg-neon-gradient bg-clip-text text-transparent">NIGHTCLUB</span>
-              </h1>
-
-              <p class="mb-8 max-w-2xl text-base leading-relaxed text-on-surface-variant sm:text-lg lg:mb-10 lg:text-xl">
-                Welcome to the next evolution of live entertainment. Experience ultra-low latency, 4K HDR fidelity, and a community that never sleeps.
-              </p>
-
-              <div class="flex flex-wrap gap-4">
-                <button
-                  type="button"
-                  class="flex items-center gap-3 rounded-full bg-neon-gradient px-6 py-3 text-sm font-bold text-on-primary transition-transform hover:scale-105 sm:px-8 sm:py-4"
-                >
-                  <span
-                    class="material-symbols-outlined"
-                    style="font-variation-settings: 'FILL' 1;"
-                  >
-                    play_arrow
-                  </span>
-                  Start Streaming
-                </button>
-
-                <button
-                  type="button"
-                  class="rounded-full border border-outline-variant/30 bg-surface-container-highest/80 px-6 py-3 text-sm font-bold text-on-surface backdrop-blur-md transition-colors hover:bg-surface-bright sm:px-8 sm:py-4"
-                >
-                  Explore Live
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <!-- Categories -->
-          <section class="mt-16 px-4 sm:px-6 lg:mt-20 lg:px-16">
-            <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <h2 class="font-headline text-2xl font-black uppercase tracking-tight text-primary">
-                Pulse Check
-              </h2>
-
-              <button
-                type="button"
-                class="flex items-center gap-2 text-sm font-bold text-on-surface-variant transition-colors hover:text-on-surface"
-              >
-                View All Categories
-                <span class="material-symbols-outlined text-sm">arrow_forward</span>
-              </button>
-            </div>
-
-            <div v-if="categoriesLoading" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-              <div
-                v-for="n in 5"
-                :key="`category-skeleton-${n}`"
-                class="animate-pulse rounded-lg border border-outline-variant/10 bg-surface-container px-5 py-4"
-              >
-                <div class="flex items-center gap-4">
-                  <div class="h-10 w-10 rounded-full bg-surface-container-high"></div>
-                  <div class="h-4 w-24 rounded bg-surface-container-high"></div>
-                </div>
-              </div>
-            </div>
-
-            <div v-else-if="categories.length" class="flex flex-wrap gap-4">
-              <div
-                v-for="category in categories"
-                :key="category.id"
-                class="group relative flex cursor-pointer items-center gap-4 rounded-lg border border-outline-variant/10 bg-surface-container px-5 py-4 transition-all duration-300 hover:bg-surface-container-high"
-              >
-                <div
-                  :class="getCategoryIconClass(category.name)"
-                  class="flex h-10 w-10 items-center justify-center rounded-full transition-transform group-hover:scale-110"
-                >
-                  <span class="material-symbols-outlined">{{ getCategoryIcon(category.name) }}</span>
-                </div>
-                <span class="font-headline text-sm font-bold">{{ category.name }}</span>
-              </div>
-            </div>
-
-            <div
-              v-else
-              class="rounded-2xl border border-outline-variant/10 bg-surface-container p-6 text-sm text-on-surface-variant"
-            >
-              No categories available right now.
-            </div>
-          </section>
-
-          <!-- Featured Live Streams -->
-          <section class="mt-20 px-4 sm:px-6 lg:mt-24 lg:px-16">
-            <h2 class="mb-10 flex items-center gap-3 font-headline text-2xl font-black tracking-tight sm:text-3xl lg:mb-12">
-              <span class="h-8 w-2 rounded-full bg-primary"></span>
-              LIVE NOW
-            </h2>
-
-            <div v-if="streamsLoading" class="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
-              <div
-                v-for="n in 3"
-                :key="`stream-skeleton-${n}`"
-                class="animate-pulse"
-              >
-                <div class="mb-4 aspect-video rounded-lg bg-surface-container-high shadow-xl"></div>
-                <div class="flex gap-4">
-                  <div class="h-12 w-12 rounded-full bg-surface-container-high"></div>
-                  <div class="min-w-0 flex-1">
-                    <div class="mb-2 h-4 w-3/4 rounded bg-surface-container-high"></div>
-                    <div class="mb-2 h-3 w-1/2 rounded bg-surface-container-high"></div>
-                    <div class="h-3 w-2/3 rounded bg-surface-container-high"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div
-              v-else-if="liveStreams.length === 0"
-              class="rounded-2xl border border-outline-variant/10 bg-surface-container p-6 text-sm text-on-surface-variant"
-            >
-              No live streams found.
-            </div>
-
-            <div v-else class="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
-              <RouterLink
-                v-for="stream in liveStreams"
-                :key="stream.id"
-                :to="`/streams/${stream.id}`"
-                class="group flex cursor-pointer flex-col gap-4"
-              >
-                <div
-                  class="relative aspect-video overflow-hidden rounded-lg bg-surface-container-highest shadow-xl transition-transform duration-300 group-hover:-translate-y-2"
-                >
-                  <img
-                    :src="getStreamThumbnail(stream)"
-                    :alt="stream.title"
-                    class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-
-                  <div class="absolute left-4 top-4 flex flex-wrap gap-2">
-                    <span class="rounded-sm bg-red-600 px-2 py-1 text-[10px] font-black uppercase tracking-tighter text-white">
-                      {{ stream.status || 'Live' }}
+          <main class="px-4 py-6 sm:px-6 lg:px-8">
+            <div class="mx-auto max-w-7xl space-y-10">
+              <!-- Hero -->
+              <section class="overflow-hidden rounded-[28px] border border-white/10 bg-surface-container p-6 shadow-xl sm:p-8 lg:p-10">
+                <div class="grid items-center gap-8 lg:grid-cols-2">
+                  <div>
+                    <span class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+                      <span class="h-2 w-2 rounded-full bg-primary animate-pulse"></span>
+                      Streaming Platform
                     </span>
-                    <span class="rounded-sm bg-black/60 px-2 py-1 text-[10px] font-bold uppercase tracking-tighter text-white backdrop-blur-md">
-                      {{ stream.current_viewers || 0 }} Viewers
-                    </span>
-                  </div>
 
-                  <div
-                    class="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100"
-                  >
-                    <span
-                      class="scale-90 rounded-full bg-white px-6 py-2 text-xs font-bold uppercase tracking-widest text-black transition-transform group-hover:scale-100"
-                    >
-                      Watch Live
-                    </span>
-                  </div>
-                </div>
+                    <h1 class="mt-5 font-headline text-3xl font-black leading-tight text-white sm:text-4xl lg:text-5xl">
+                      Stream live, interact with viewers, and save every stream as a replay
+                    </h1>
 
-                <div class="flex gap-4">
-                  <div class="h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-primary/30">
-                    <img
-                      :src="getUserAvatar(stream.user)"
-                      :alt="stream.user?.name || 'Streamer'"
-                      class="h-full w-full object-cover"
-                    />
-                  </div>
-
-                  <div class="flex min-w-0 flex-col">
-                    <h3 class="line-clamp-1 font-bold text-on-surface transition-colors group-hover:text-primary">
-                      {{ stream.title }}
-                    </h3>
-                    <p class="text-sm font-medium text-on-surface-variant">
-                      {{ stream.user?.name || 'Unknown streamer' }}
+                    <p class="mt-4 max-w-2xl text-sm leading-7 text-on-surface-variant sm:text-base">
+                      Start live streams, receive comments and reactions in real time, and let users
+                      watch the replay later from the videos page.
                     </p>
-                    <span class="mt-1 text-[10px] font-bold uppercase text-zinc-500">
-                      {{ formatStreamMeta(stream) }}
-                    </span>
-                  </div>
-                </div>
-              </RouterLink>
-            </div>
-          </section>
 
-          <!-- Trending Videos -->
-          <section class="mt-20 px-4 sm:px-6 lg:mt-24 lg:px-16">
-            <div class="rounded-xl bg-surface-container p-6 sm:p-8 lg:p-12">
-              <h2 class="mb-8 font-headline text-2xl font-black tracking-tight">
-                TRENDING REPLAYS
-              </h2>
+                    <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+                      <RouterLink
+                        to="/streams"
+                        class="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-bold uppercase tracking-[0.15em] text-on-primary transition hover:opacity-90"
+                      >
+                        Explore Streams
+                      </RouterLink>
 
-              <div v-if="videosLoading" class="no-scrollbar flex gap-6 overflow-x-auto pb-4">
-                <div
-                  v-for="n in 4"
-                  :key="`video-skeleton-${n}`"
-                  class="w-[280px] flex-none animate-pulse sm:w-[300px]"
-                >
-                  <div class="mb-3 aspect-video rounded-lg bg-surface-container-high"></div>
-                  <div class="mb-2 h-4 w-full rounded bg-surface-container-high"></div>
-                  <div class="h-3 w-2/3 rounded bg-surface-container-high"></div>
-                </div>
-              </div>
-
-              <div
-                v-else-if="trendingVideos.length === 0"
-                class="rounded-2xl border border-outline-variant/10 bg-surface-container-low p-6 text-sm text-on-surface-variant"
-              >
-                No videos found.
-              </div>
-
-              <div v-else class="no-scrollbar flex gap-6 overflow-x-auto pb-4">
-                <RouterLink
-                  v-for="video in trendingVideos"
-                  :key="video.id"
-                  :to="`/videos/${video.id}`"
-                  class="group w-[280px] flex-none cursor-pointer sm:w-[300px]"
-                >
-                  <div class="relative mb-3 aspect-video overflow-hidden rounded-lg">
-                    <img
-                      :src="getVideoThumbnail(video)"
-                      :alt="video.title"
-                      class="h-full w-full object-cover grayscale transition-all duration-500 group-hover:grayscale-0"
-                    />
-                    <div class="absolute bottom-2 right-2 rounded-sm bg-black/80 px-2 py-1 text-[10px] font-bold text-white">
-                      {{ formatDuration(video.duration) }}
+                      <RouterLink
+                        to="/videos"
+                        class="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-bold uppercase tracking-[0.15em] text-white transition hover:bg-white/10"
+                      >
+                        Watch Videos
+                      </RouterLink>
                     </div>
                   </div>
 
-                  <h4 class="line-clamp-2 text-sm font-bold text-on-surface">
-                    {{ video.title }}
-                  </h4>
-                  <p class="mt-1 text-xs text-on-surface-variant">
-                    {{ formatVideoStats(video) }}
-                  </p>
-                </RouterLink>
-              </div>
-            </div>
-          </section>
+                  <div class="grid gap-4">
+                    <div class="overflow-hidden rounded-[24px] border border-white/10 bg-black/30">
+                      <div class="relative aspect-video bg-zinc-950">
+                        <img
+                          v-if="featuredStream?.thumbnail_url || featuredStream?.thumbnail"
+                          :src="getMediaUrl(featuredStream?.thumbnail_url || featuredStream?.thumbnail)"
+                          :alt="featuredStream?.title || 'Featured stream'"
+                          class="h-full w-full object-cover"
+                        />
+                        <div
+                          v-else
+                          class="flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#111,#22132c)]"
+                        >
+                          <span class="material-symbols-outlined text-6xl text-primary/70">live_tv</span>
+                        </div>
 
-          <!-- CTA -->
-          <section class="mb-16 mt-24 px-4 sm:px-6 lg:mb-20 lg:mt-32 lg:px-16">
-            <div class="relative overflow-hidden rounded-xl border border-primary/20 bg-surface-container-high shadow-2xl shadow-primary/10">
-              <div class="pointer-events-none absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-primary/10 to-transparent"></div>
+                        <div class="absolute left-4 top-4 rounded-full bg-red-500 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
+                          Live
+                        </div>
 
-              <div class="relative z-10 max-w-3xl p-6 sm:p-8 lg:p-20">
-                <h2 class="mb-6 font-headline text-3xl font-black tracking-tighter sm:text-4xl lg:text-5xl">
-                  JOIN THE INNER CIRCLE
-                </h2>
+                        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/60 to-transparent p-4">
+                          <h3 class="line-clamp-2 text-lg font-bold text-white">
+                            {{ featuredStream?.title || 'Live stream preview' }}
+                          </h3>
+                          <p class="mt-1 text-sm text-zinc-300">
+                            {{ featuredStream?.user?.name || 'Streamer' }}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
 
-                <p class="mb-8 text-base leading-relaxed text-on-surface-variant sm:text-lg lg:mb-10">
-                  Become an early adopter. Get exclusive access to beta features, limited edition drops, and VIP community events before anyone else.
-                </p>
+                    <div class="grid grid-cols-3 gap-3">
+                      <div class="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
+                        <p class="text-2xl font-black text-white">{{ stats.live }}</p>
+                        <p class="mt-1 text-[10px] uppercase tracking-[0.15em] text-on-surface-variant">Live</p>
+                      </div>
 
-                <div class="flex flex-col gap-4 sm:flex-row">
-                  <input
-                    type="email"
-                    placeholder="Enter your email address"
-                    class="flex-1 rounded-full border-none bg-surface-container-low px-6 py-4 text-on-surface transition-all focus:ring-2 focus:ring-primary"
-                  />
+                      <div class="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
+                        <p class="text-2xl font-black text-white">{{ stats.videos }}</p>
+                        <p class="mt-1 text-[10px] uppercase tracking-[0.15em] text-on-surface-variant">Videos</p>
+                      </div>
 
-                  <button
-                    type="button"
-                    class="whitespace-nowrap rounded-full bg-neon-gradient px-8 py-4 text-xs font-bold uppercase tracking-widest text-on-primary transition-all hover:shadow-lg hover:shadow-primary/30 sm:px-10"
+                      <div class="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
+                        <p class="text-2xl font-black text-white">{{ stats.comments }}</p>
+                        <p class="mt-1 text-[10px] uppercase tracking-[0.15em] text-on-surface-variant">Comments</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Simple project section -->
+              <section class="overflow-hidden rounded-[28px] border border-white/10 bg-surface-container p-6 shadow-xl sm:p-8">
+                <div class="grid gap-6 lg:grid-cols-2">
+                  <div>
+                    <h2 class="font-headline text-2xl font-black text-white sm:text-3xl">
+                      Everything around the live experience
+                    </h2>
+
+                    <p class="mt-3 text-sm leading-7 text-on-surface-variant sm:text-base">
+                      The platform is built around one idea: start a stream, let people interact
+                      live, then keep the content available as replay videos.
+                    </p>
+
+                    <div class="mt-6 grid gap-3 sm:grid-cols-3">
+                      <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                        <span class="material-symbols-outlined text-primary">sensors</span>
+                        <h3 class="mt-2 text-sm font-bold text-white">Live streams</h3>
+                        <p class="mt-1 text-xs leading-6 text-on-surface-variant">
+                          Go live instantly.
+                        </p>
+                      </div>
+
+                      <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                        <span class="material-symbols-outlined text-primary">forum</span>
+                        <h3 class="mt-2 text-sm font-bold text-white">Comments</h3>
+                        <p class="mt-1 text-xs leading-6 text-on-surface-variant">
+                          Talk with viewers in real time.
+                        </p>
+                      </div>
+
+                      <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                        <span class="material-symbols-outlined text-primary">video_library</span>
+                        <h3 class="mt-2 text-sm font-bold text-white">Replays</h3>
+                        <p class="mt-1 text-xs leading-6 text-on-surface-variant">
+                          Save streams as videos.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-center">
+                    <div class="relative w-full max-w-md rounded-[28px] border border-white/10 bg-black/30 p-6">
+                      <div class="absolute left-8 top-8 h-24 w-24 rounded-full bg-primary/15 blur-3xl"></div>
+                      <div class="absolute bottom-8 right-8 h-24 w-24 rounded-full bg-purple-500/15 blur-3xl"></div>
+
+                      <div class="relative space-y-4">
+                        <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 animate-float">
+                          <span class="material-symbols-outlined text-primary">live_tv</span>
+                          <div>
+                            <p class="text-sm font-bold text-white">Stream started</p>
+                            <p class="text-xs text-on-surface-variant">Broadcast is live</p>
+                          </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 animate-float-delay">
+                          <span class="material-symbols-outlined text-primary">favorite</span>
+                          <div>
+                            <p class="text-sm font-bold text-white">Reactions received</p>
+                            <p class="text-xs text-on-surface-variant">Audience is interacting</p>
+                          </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 animate-float-slow">
+                          <span class="material-symbols-outlined text-primary">movie</span>
+                          <div>
+                            <p class="text-sm font-bold text-white">Replay saved</p>
+                            <p class="text-xs text-on-surface-variant">Video available after end</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Live Streams -->
+              <section class="space-y-5">
+                <div class="flex items-end justify-between gap-4">
+                  <div>
+                    <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Live now</p>
+                    <h2 class="mt-2 font-headline text-2xl font-black text-white">Active streams</h2>
+                  </div>
+
+                  <RouterLink
+                    to="/streams"
+                    class="text-sm font-bold text-primary transition hover:text-white"
                   >
-                    Request Invite
-                  </button>
+                    View all
+                  </RouterLink>
                 </div>
 
-                <p class="mt-6 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60">
-                  Secure Access • No Spam • Encryption Standard v2.0
-                </p>
-              </div>
-            </div>
-          </section>
-        </main>
-      </div>
+                <div v-if="streamsLoading" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  <div
+                    v-for="n in 3"
+                    :key="`stream-skeleton-${n}`"
+                    class="overflow-hidden rounded-[24px] border border-white/10 bg-white/5 animate-pulse"
+                  >
+                    <div class="aspect-video bg-white/5"></div>
+                    <div class="space-y-3 p-5">
+                      <div class="h-4 w-2/3 rounded bg-white/10"></div>
+                      <div class="h-3 w-1/2 rounded bg-white/10"></div>
+                    </div>
+                  </div>
+                </div>
 
-      <AppFooter :collapsed="sidebarCollapsed" />
+                <div v-else-if="liveStreams.length" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  <RouterLink
+                    v-for="stream in liveStreams"
+                    :key="stream.id"
+                    :to="`/streams/${stream.id}`"
+                    class="group overflow-hidden rounded-[24px] border border-white/10 bg-surface-container shadow-lg transition hover:-translate-y-1"
+                  >
+                    <div class="relative aspect-video bg-zinc-950">
+                      <img
+                        v-if="stream.thumbnail_url || stream.thumbnail"
+                        :src="getMediaUrl(stream.thumbnail_url || stream.thumbnail)"
+                        :alt="stream.title"
+                        class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      />
+                      <div
+                        v-else
+                        class="flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#111,#22132c)]"
+                      >
+                        <span class="material-symbols-outlined text-5xl text-primary/70">live_tv</span>
+                      </div>
+
+                      <div class="absolute left-4 top-4 rounded-full bg-red-500 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
+                        Live
+                      </div>
+                    </div>
+
+                    <div class="p-5">
+                      <h3 class="line-clamp-2 text-lg font-bold text-white">{{ stream.title }}</h3>
+                      <p class="mt-2 text-sm text-on-surface-variant">
+                        {{ stream.user?.name || 'Unknown user' }}
+                      </p>
+                    </div>
+                  </RouterLink>
+                </div>
+
+                <div
+                  v-else
+                  class="rounded-[24px] border border-dashed border-white/10 bg-white/5 px-6 py-10 text-center text-on-surface-variant"
+                >
+                  No live streams right now.
+                </div>
+              </section>
+
+              <!-- Videos -->
+              <section class="space-y-5">
+                <div class="flex items-end justify-between gap-4">
+                  <div>
+                    <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Latest videos</p>
+                    <h2 class="mt-2 font-headline text-2xl font-black text-white">Replay videos</h2>
+                  </div>
+
+                  <RouterLink
+                    to="/videos"
+                    class="text-sm font-bold text-primary transition hover:text-white"
+                  >
+                    View all
+                  </RouterLink>
+                </div>
+
+                <div v-if="videosLoading" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+                  <div
+                    v-for="n in 4"
+                    :key="`video-skeleton-${n}`"
+                    class="overflow-hidden rounded-[24px] border border-white/10 bg-white/5 animate-pulse"
+                  >
+                    <div class="aspect-video bg-white/5"></div>
+                    <div class="space-y-3 p-5">
+                      <div class="h-4 w-2/3 rounded bg-white/10"></div>
+                      <div class="h-3 w-1/2 rounded bg-white/10"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-else-if="latestVideos.length" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+                  <RouterLink
+                    v-for="video in latestVideos"
+                    :key="video.id"
+                    :to="`/videos/${video.id}`"
+                    class="group overflow-hidden rounded-[24px] border border-white/10 bg-surface-container shadow-lg transition hover:-translate-y-1"
+                  >
+                    <div class="relative aspect-video bg-zinc-950">
+                      <img
+                        v-if="video.stream?.thumbnail_url || video.stream?.thumbnail"
+                        :src="getMediaUrl(video.stream?.thumbnail_url || video.stream?.thumbnail)"
+                        :alt="video.title"
+                        class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      />
+                      <div
+                        v-else
+                        class="flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#111,#22132c)]"
+                      >
+                        <span class="material-symbols-outlined text-5xl text-primary/70">video_library</span>
+                      </div>
+
+                      <div class="absolute bottom-3 right-3 rounded-full bg-black/70 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+                        {{ formatDuration(video.duration) }}
+                      </div>
+                    </div>
+
+                    <div class="p-5">
+                      <h3 class="line-clamp-2 text-base font-bold text-white">{{ video.title }}</h3>
+                      <p class="mt-2 text-sm text-on-surface-variant">
+                        {{ video.user?.name || 'Unknown user' }}
+                      </p>
+                    </div>
+                  </RouterLink>
+                </div>
+
+                <div
+                  v-else
+                  class="rounded-[24px] border border-dashed border-white/10 bg-white/5 px-6 py-10 text-center text-on-surface-variant"
+                >
+                  No videos available yet.
+                </div>
+              </section>
+            </div>
+          </main>
+
+          <AppFooter />
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import api from '@/services/api'
 import TopNavbar from '@/components/layout/TopNavbar.vue'
@@ -326,156 +345,74 @@ import AppFooter from '@/components/layout/Footer.vue'
 const sidebarCollapsed = ref(false)
 const mobileSidebarOpen = ref(false)
 
-const categories = ref([])
-const liveStreams = ref([])
-const trendingVideos = ref([])
-
-const categoriesLoading = ref(false)
 const streamsLoading = ref(false)
 const videosLoading = ref(false)
 
-const buildStorageUrl = (path) => {
-  if (!path) return null
-  if (path.startsWith('http')) return path
-  return `http://localhost:8000/storage/${path}`
-}
+const streams = ref([])
+const videos = ref([])
 
-const getUserAvatar = (user) => {
-  const avatar = user?.profile?.avatar || user?.avatar || null
+const stats = computed(() => {
+  const live = streams.value.filter((stream) => String(stream?.status).toLowerCase() === 'live').length
+  const comments =
+    streams.value.reduce((sum, stream) => sum + Number(stream?.comments_count || 0), 0) +
+    videos.value.reduce((sum, video) => sum + Number(video?.comments_count || 0), 0)
 
-  if (avatar) {
-    return buildStorageUrl(avatar)
+  return {
+    live,
+    videos: videos.value.length,
+    comments,
   }
+})
 
-  const name = user?.name || 'User'
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=111111&color=ffffff&size=256`
-}
+const liveStreams = computed(() => {
+  return streams.value.filter((stream) => String(stream?.status).toLowerCase() === 'live').slice(0, 3)
+})
 
-const normalizeCategories = (payload) => {
-  if (Array.isArray(payload)) return payload
-  if (Array.isArray(payload?.data)) return payload.data
-  if (Array.isArray(payload?.data?.categories)) return payload.data.categories
-  if (Array.isArray(payload?.categories)) return payload.categories
-  return []
-}
+const latestVideos = computed(() => {
+  return videos.value.slice(0, 4)
+})
 
-const normalizePaginatedItems = (payload) => {
+const featuredStream = computed(() => {
+  return liveStreams.value[0] || streams.value[0] || null
+})
+
+const normalizeCollection = (payload) => {
   if (Array.isArray(payload)) return payload
   if (Array.isArray(payload?.data)) return payload.data
   if (Array.isArray(payload?.data?.data)) return payload.data.data
   return []
 }
 
-const loadCategories = async () => {
-  categoriesLoading.value = true
-
-  try {
-    const response = await api.get('/categories')
-    categories.value = normalizeCategories(response.data)
-  } catch (error) {
-    console.error('Failed to load categories', error)
-    categories.value = []
-  } finally {
-    categoriesLoading.value = false
-  }
+const getMediaUrl = (path) => {
+  if (!path) return null
+  if (typeof path === 'string' && path.startsWith('http')) return path
+  return `http://localhost:8000/storage/${String(path).replace(/^\/+/, '')}`
 }
 
-const loadStreams = async () => {
-  streamsLoading.value = true
-
-  try {
-    const response = await api.get('/stream/streams?page=1')
-    const items = normalizePaginatedItems(response.data)
-
-    liveStreams.value = items.slice(0, 3)
-  } catch (error) {
-    console.error('Failed to load streams', error)
-    liveStreams.value = []
-  } finally {
-    streamsLoading.value = false
-  }
-}
-
-const loadVideos = async () => {
-  videosLoading.value = true
-
-  try {
-    const response = await api.get('/video/videos?page=1')
-    const items = normalizePaginatedItems(response.data)
-
-    trendingVideos.value = items.slice(0, 4)
-  } catch (error) {
-    console.error('Failed to load videos', error)
-    trendingVideos.value = []
-  } finally {
-    videosLoading.value = false
-  }
-}
-
-const getCategoryIcon = (categoryName = '') => {
-  const value = categoryName.toLowerCase()
-
-  if (value.includes('game')) return 'sports_esports'
-  if (value.includes('music')) return 'music_note'
-  if (value.includes('chat')) return 'chat_bubble'
-  if (value.includes('anime')) return 'auto_awesome'
-  if (value.includes('creative')) return 'code'
-  if (value.includes('tech')) return 'memory'
-  return 'sell'
-}
-
-const getCategoryIconClass = (categoryName = '') => {
-  const value = categoryName.toLowerCase()
-
-  if (value.includes('game')) return 'bg-primary/20 text-primary'
-  if (value.includes('music')) return 'bg-secondary/20 text-secondary'
-  if (value.includes('chat')) return 'bg-tertiary/20 text-tertiary'
-  if (value.includes('anime')) return 'bg-fuchsia-500/20 text-fuchsia-500'
-  if (value.includes('creative')) return 'bg-purple-500/20 text-purple-500'
-  if (value.includes('tech')) return 'bg-cyan-500/20 text-cyan-400'
-  return 'bg-primary/10 text-primary'
-}
-
-const getStreamThumbnail = (stream) => {
-  return (
-    buildStorageUrl(stream?.thumbnail) ||
-    'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80'
-  )
-}
-
-const getVideoThumbnail = (video) => {
-  return (
-    buildStorageUrl(video?.thumbnail) ||
-    buildStorageUrl(video?.cover) ||
-    'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80'
-  )
-}
-
-const formatStreamMeta = (stream) => {
-  const categoryNames = (stream?.categories || []).map((category) => category.name).filter(Boolean)
-  if (categoryNames.length) return categoryNames.join(' • ')
-  return 'Live Stream'
-}
-
-const formatVideoStats = (video) => {
-  const comments = video?.comments_count || 0
-  const reactions = video?.stream?.reactions_count || 0
-  return `${comments} comments • ${reactions} reactions`
+const getInitials = (name = 'User') => {
+  return String(name)
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
 }
 
 const formatDuration = (seconds) => {
-  if (!seconds || Number.isNaN(Number(seconds))) return '00:00'
+  const total = Number(seconds || 0)
 
-  const total = Math.floor(Number(seconds))
-  const hours = Math.floor(total / 3600)
-  const minutes = Math.floor((total % 3600) / 60)
-  const secs = total % 60
+  if (!total) return '0:00'
 
-  if (hours > 0) {
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+  const hrs = Math.floor(total / 3600)
+  const mins = Math.floor((total % 3600) / 60)
+  const secs = Math.floor(total % 60)
+
+  if (hrs > 0) {
+    return `${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
   }
 
-  return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+  return `${mins}:${String(secs).padStart(2, '0')}`
 }
 
 const handleSidebarToggle = () => {
@@ -493,6 +430,34 @@ const handleResize = () => {
   }
 }
 
+const loadStreams = async () => {
+  streamsLoading.value = true
+
+  try {
+    const response = await api.get('/stream/streams')
+    streams.value = normalizeCollection(response.data?.data || response.data)
+  } catch (error) {
+    console.error('Failed to load streams', error)
+    streams.value = []
+  } finally {
+    streamsLoading.value = false
+  }
+}
+
+const loadVideos = async () => {
+  videosLoading.value = true
+
+  try {
+    const response = await api.get('/video/videos')
+    videos.value = normalizeCollection(response.data?.data || response.data)
+  } catch (error) {
+    console.error('Failed to load videos', error)
+    videos.value = []
+  } finally {
+    videosLoading.value = false
+  }
+}
+
 watch(mobileSidebarOpen, (isOpen) => {
   if (window.innerWidth < 768) {
     document.body.style.overflow = isOpen ? 'hidden' : ''
@@ -502,12 +467,7 @@ watch(mobileSidebarOpen, (isOpen) => {
 onMounted(async () => {
   handleResize()
   window.addEventListener('resize', handleResize)
-
-  await Promise.all([
-    loadCategories(),
-    loadStreams(),
-    loadVideos(),
-  ])
+  await Promise.all([loadStreams(), loadVideos()])
 })
 
 onBeforeUnmount(() => {
@@ -517,28 +477,26 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.material-symbols-outlined {
-  font-variation-settings:
-    'FILL' 0,
-    'wght' 400,
-    'GRAD' 0,
-    'opsz' 24;
+.animate-float {
+  animation: floatY 3s ease-in-out infinite;
 }
 
-.bg-neon-gradient {
-  background: linear-gradient(135deg, #f680ff 0%, #c180ff 100%);
+.animate-float-delay {
+  animation: floatY 3.6s ease-in-out infinite;
+  animation-delay: 0.4s;
 }
 
-.text-glow-magenta {
-  text-shadow: 0 0 20px rgba(246, 128, 255, 0.4);
+.animate-float-slow {
+  animation: floatY 4.2s ease-in-out infinite;
+  animation-delay: 0.8s;
 }
 
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+@keyframes floatY {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
 }
 </style>

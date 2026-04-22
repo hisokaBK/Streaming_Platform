@@ -18,46 +18,15 @@
       </span>
     </div>
 
-    <div class="hidden items-center gap-6 lg:flex">
-      <RouterLink
-        class="font-manrope tracking-tight text-zinc-400 transition-colors hover:text-zinc-100"
-        to="/"
-      >
-        Discover
-      </RouterLink>
-
-      <RouterLink
-        class="font-manrope tracking-tight text-zinc-400 transition-colors hover:text-zinc-100"
-        to="/streams"
-      >
-        Live
-      </RouterLink>
-
-      <RouterLink
-        class="font-manrope tracking-tight text-zinc-400 transition-colors hover:text-zinc-100"
-        to="/videos"
-      >
-        Videos
-      </RouterLink>
-
-      <RouterLink
-        v-if="isAdmin"
-        class="font-manrope tracking-tight text-zinc-400 transition-colors hover:text-zinc-100"
-        to="/admin/dashboard"
-      >
-        Dashboard
-      </RouterLink>
-    </div>
-
     <div class="flex items-center gap-2 sm:gap-4">
       <RouterLink
-        to="/notifications"
+        :to="notificationLink"
         class="relative rounded-full p-2 text-zinc-400 transition-all duration-300 hover:bg-white/10 hover:text-white active:scale-90"
       >
         <span class="material-symbols-outlined">notifications</span>
 
         <span
-          v-if="hasUnreadNotifications"
+          v-if="isAuthenticated && hasUnreadNotifications"
           class="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-black"
         ></span>
       </RouterLink>
@@ -70,7 +39,7 @@
         Admin
       </RouterLink>
 
-      <RouterLink to="/profile" class="block shrink-0">
+      <RouterLink :to="profileLink" class="block shrink-0">
         <template v-if="avatarUrl">
           <img
             :src="avatarUrl"
@@ -95,16 +64,62 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import api from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
 
 defineEmits(['toggle-sidebar'])
+
+const authStore = useAuthStore()
 
 const authProfile = ref(null)
 const hasUnreadNotifications = ref(false)
 
+const isAuthenticated = computed(() => !!authStore.user)
+const isAdmin = computed(() => authStore.user?.role === 'admin')
+
+const APP_URL = (import.meta.env.VITE_APP_URL || 'http://localhost:8000').replace(/\/$/, '')
+const STORAGE_BASE = `${APP_URL}/storage`
+
 const buildStorageUrl = (path) => {
-  if (!path) return null
-  if (path.startsWith('http')) return path
-  return `http://localhost:8000/storage/${path}`
+  if (!path || typeof path !== 'string') return null
+
+  const value = path.trim()
+  if (!value) return null
+
+  if (value.startsWith('http://nginx/storage/')) {
+    return value.replace('http://nginx/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('https://nginx/storage/')) {
+    return value.replace('https://nginx/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('http://app/storage/')) {
+    return value.replace('http://app/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('https://app/storage/')) {
+    return value.replace('https://app/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('http://localhost/storage/')) {
+    return value.replace('http://localhost/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('https://localhost/storage/')) {
+    return value.replace('https://localhost/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    return value
+  }
+
+  const clean = value.replace(/^\/+/, '')
+
+  if (clean.startsWith('storage/')) {
+    return `${APP_URL}/${clean}`
+  }
+
+  return `${STORAGE_BASE}/${clean}`
 }
 
 const avatarUrl = computed(() => {
@@ -113,7 +128,7 @@ const avatarUrl = computed(() => {
 })
 
 const userInitials = computed(() => {
-  const name = authProfile.value?.user?.name || 'User'
+  const name = authProfile.value?.user?.name || authStore.user?.name || 'Guest'
 
   return name
     .trim()
@@ -124,11 +139,20 @@ const userInitials = computed(() => {
     .toUpperCase()
 })
 
-const isAdmin = computed(() => {
-  return authProfile.value?.user?.role === 'admin'
+const profileLink = computed(() => {
+  return isAuthenticated.value ? '/profile' : '/login'
+})
+
+const notificationLink = computed(() => {
+  return isAuthenticated.value ? '/notifications' : '/login'
 })
 
 const loadAuthProfile = async () => {
+  if (!isAuthenticated.value) {
+    authProfile.value = null
+    return
+  }
+
   try {
     const response = await api.get('/profile/profile')
     authProfile.value = response.data?.data?.profile || null
@@ -139,6 +163,11 @@ const loadAuthProfile = async () => {
 }
 
 const loadNotificationsState = async () => {
+  if (!isAuthenticated.value) {
+    hasUnreadNotifications.value = false
+    return
+  }
+
   try {
     const response = await api.get('/notification/notifications?page=1')
     const notifications = response.data?.data?.data || response.data?.data || []
