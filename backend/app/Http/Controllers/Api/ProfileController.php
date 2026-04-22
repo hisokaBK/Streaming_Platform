@@ -15,60 +15,9 @@ class ProfileController extends Controller
     public function showMyProfile(Request $request): JsonResponse
     {
         $authUser = $request->user();
+        $profile = $authUser->profile()->with('user')->firstOrFail();
 
-        $profile = $authUser->profile()->with('user')->first();
-
-        $profile->user->loadCount([
-            'followerSubscriptions',
-            'followingSubscriptions',
-        ]);
-
-        $followersPreview = Subscription::with('subscriber.profile')
-            ->where('streamer_id', $authUser->id)
-            ->latest()
-            ->take(5)
-            ->get();
-
-        $followingPreview = Subscription::with('streamer.profile')
-            ->where('subscriber_id', $authUser->id)
-            ->latest()
-            ->take(5)
-            ->get();
-
-        $videosPreview = $authUser->videos()
-            ->withCount('comments')
-            ->latest()
-            ->take(5)
-            ->get();
-
-        $liveStream = $authUser->streams()
-            ->withCount(['comments', 'reactions'])
-            ->where('status', 'live')
-            ->latest()
-            ->first();
-
-        $streamsCount = $authUser->streams()->count();
-        $videosCount = $authUser->videos()->count();
-
-        $mostReactedVideo = $authUser->videos()
-            ->with('stream')
-            ->get()
-            ->sortByDesc(function ($video) {
-                return $video->stream?->reactions()->count() ?? 0;
-            })
-            ->first();
-
-        if ($mostReactedVideo && $mostReactedVideo->stream) {
-            $mostReactedVideo->stream->loadCount('reactions');
-        }
-
-        $profile->followers_preview = $followersPreview;
-        $profile->following_preview = $followingPreview;
-        $profile->videos_preview = $videosPreview;
-        $profile->live_stream = $liveStream;
-        $profile->streams_count = $streamsCount;
-        $profile->videos_count = $videosCount;
-        $profile->most_reacted_video = $mostReactedVideo;
+        $this->hydrateProfilePayload($profile, $authUser);
 
         return response()->json([
             'message' => 'Profile retrieved successfully',
@@ -82,6 +31,46 @@ class ProfileController extends Controller
     {
         $profile = $user->profile()->with('user')->firstOrFail();
 
+        $this->hydrateProfilePayload($profile, $user);
+
+        return response()->json([
+            'message' => 'Profile retrieved successfully',
+            'data' => [
+                'profile' => new ProfileResource($profile),
+            ],
+        ]);
+    }
+
+    public function update(UpdateProfileRequest $request): JsonResponse
+    {
+        $authUser = $request->user();
+        $profile = $authUser->profile()->with('user')->firstOrFail();
+
+        $data = $request->validated();
+
+        if ($request->hasFile('avatar')) {
+            $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        }
+
+        if ($request->hasFile('background_image')) {
+            $data['background_image'] = $request->file('background_image')->store('backgrounds', 'public');
+        }
+
+        $profile->update($data);
+        $profile->load('user');
+
+        $this->hydrateProfilePayload($profile, $authUser);
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'data' => [
+                'profile' => new ProfileResource($profile),
+            ],
+        ]);
+    }
+
+    private function hydrateProfilePayload($profile, User $user): void
+    {
         $profile->user->loadCount([
             'followerSubscriptions',
             'followingSubscriptions',
@@ -100,9 +89,16 @@ class ProfileController extends Controller
             ->get();
 
         $videosPreview = $user->videos()
+            ->with([
+                'categories',
+                'stream',
+            ])
             ->withCount('comments')
+            ->where('recording_status', 'completed')
+            ->whereNotNull('url')
+            ->latest('recorded_at')
             ->latest()
-            ->take(5)
+            ->take(12)
             ->get();
 
         $liveStream = $user->streams()
@@ -112,10 +108,20 @@ class ProfileController extends Controller
             ->first();
 
         $streamsCount = $user->streams()->count();
-        $videosCount = $user->videos()->count();
+
+        $videosCount = $user->videos()
+            ->where('recording_status', 'completed')
+            ->whereNotNull('url')
+            ->count();
 
         $mostReactedVideo = $user->videos()
-            ->with('stream')
+            ->with([
+                'stream',
+                'categories',
+            ])
+            ->withCount('comments')
+            ->where('recording_status', 'completed')
+            ->whereNotNull('url')
             ->get()
             ->sortByDesc(function ($video) {
                 return $video->stream?->reactions()->count() ?? 0;
@@ -133,74 +139,5 @@ class ProfileController extends Controller
         $profile->streams_count = $streamsCount;
         $profile->videos_count = $videosCount;
         $profile->most_reacted_video = $mostReactedVideo;
-
-        return response()->json([
-            'message' => 'Profile retrieved successfully',
-            'data' => [
-                'profile' => new ProfileResource($profile),
-            ],
-        ]);
-    }
-
-    public function update(UpdateProfileRequest $request): JsonResponse
-    {
-        $authUser = $request->user();
-
-        $profile = $authUser->profile()->with('user')->first();
-
-        $data = $request->validated();
-
-        if ($request->hasFile('avatar')) {
-            $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
-        }
-
-        if ($request->hasFile('background_image')) {
-            $data['background_image'] = $request->file('background_image')->store('backgrounds', 'public');
-        }
-
-        $profile->update($data);
-
-        $profile->load('user');
-
-        $profile->user->loadCount([
-            'followerSubscriptions',
-            'followingSubscriptions',
-        ]);
-
-        $followersPreview = Subscription::with('subscriber.profile')
-            ->where('streamer_id', $authUser->id)
-            ->latest()
-            ->take(5)
-            ->get();
-
-        $followingPreview = Subscription::with('streamer.profile')
-            ->where('subscriber_id', $authUser->id)
-            ->latest()
-            ->take(5)
-            ->get();
-
-        $videosPreview = $authUser->videos()
-            ->withCount('comments')
-            ->latest()
-            ->take(5)
-            ->get();
-
-        $liveStream = $authUser->streams()
-            ->withCount(['comments', 'reactions'])
-            ->where('status', 'live')
-            ->latest()
-            ->first();
-
-        $profile->followers_preview = $followersPreview;
-        $profile->following_preview = $followingPreview;
-        $profile->videos_preview = $videosPreview;
-        $profile->live_stream = $liveStream;
-
-        return response()->json([
-            'message' => 'Profile updated successfully',
-            'data' => [
-                'profile' => new ProfileResource($profile),
-            ],
-        ]);
     }
 }
