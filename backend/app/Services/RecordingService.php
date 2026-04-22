@@ -57,6 +57,9 @@ class RecordingService
         return $response->json() ?? [];
     }
 
+    /**
+     * Optional fallback: records only the broadcaster participant.
+     */
     public function startParticipantRecording(Stream $stream, User $user): array
     {
         $token = $this->makeRoomRecordToken($stream->room_name);
@@ -112,18 +115,75 @@ class RecordingService
         ];
     }
 
+    /**
+     * Main method: records the whole room composition
+     * (camera + screen share + layout), not only one participant.
+     */
+    public function startRoomCompositeRecording(Stream $stream): array
+    {
+        $token = $this->makeGlobalRoomRecordToken();
+
+        $payload = [
+            'room_name' => $stream->room_name,
+            'layout' => 'speaker-dark',
+            'file_outputs' => [
+                [
+                    'file_type' => 'MP4',
+                    'filepath' => $this->absoluteRecordingPath($stream),
+                ],
+            ],
+        ];
+
+        Log::info('Starting room composite recording', [
+            'stream_id' => $stream->id,
+            'room_name' => $stream->room_name,
+            'filepath' => $this->absoluteRecordingPath($stream),
+            'url' => $this->twirpUrl('StartRoomCompositeEgress'),
+            'payload' => $payload,
+        ]);
+
+        $response = Http::withToken($token)
+            ->acceptJson()
+            ->timeout(30)
+            ->connectTimeout(5)
+            ->post($this->twirpUrl('StartRoomCompositeEgress'), $payload);
+
+        Log::info('StartRoomCompositeEgress response', [
+            'stream_id' => $stream->id,
+            'status' => $response->status(),
+            'body' => $response->json() ?? $response->body(),
+        ]);
+
+        if ($response->failed()) {
+            throw new \RuntimeException(
+                $response->json('msg')
+                    ?? $response->json('message')
+                    ?? $response->body()
+                    ?? 'Failed to start room composite recording.'
+            );
+        }
+
+        $data = $response->json();
+
+        return [
+            'egress_id' => data_get($data, 'egress_id'),
+            'status' => data_get($data, 'status'),
+            'raw' => $data,
+        ];
+    }
+
     public function stopRecording(string $egressId): ?array
     {
         $url = rtrim(config('services.livekit.api_url') ?? env('LIVEKIT_API_URL'), '/')
             . '/twirp/livekit.Egress/StopEgress';
 
-        \Log::info('Stopping egress recording', [
+        Log::info('Stopping egress recording', [
             'egress_id' => $egressId,
             'url' => $url,
         ]);
 
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->createRoomAdminToken(),
+            'Authorization' => 'Bearer ' . $this->makeGlobalRoomRecordToken(),
             'Content-Type' => 'application/json',
         ])->post($url, [
             'egress_id' => $egressId,
@@ -131,7 +191,7 @@ class RecordingService
 
         $body = $response->json();
 
-        \Log::info('StopEgress response', [
+        Log::info('StopEgress response', [
             'egress_id' => $egressId,
             'status' => $response->status(),
             'body' => $body,
@@ -155,7 +215,7 @@ class RecordingService
             $code === 'not_found';
 
         if ($nonFatal) {
-            \Log::warning('Ignoring non-fatal stop recording error.', [
+            Log::warning('Ignoring non-fatal stop recording error.', [
                 'egress_id' => $egressId,
                 'status' => $response->status(),
                 'code' => $body['code'] ?? null,

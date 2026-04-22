@@ -163,7 +163,7 @@ class StreamController extends Controller
             if ($stream->status === 'live') {
                 $recordingService->ensureRoomExists($stream);
 
-                $recording = $recordingService->startParticipantRecording($stream, auth()->user());
+                $recording = $recordingService->startRoomCompositeRecording($stream);
 
                 $stream->update([
                     'recording_egress_id' => $recording['egress_id'],
