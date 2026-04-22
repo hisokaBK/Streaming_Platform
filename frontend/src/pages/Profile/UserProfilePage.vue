@@ -203,16 +203,41 @@
                 </div>
 
                 <div v-else class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div
+                  <RouterLink
                     v-for="video in paginatedVideos"
                     :key="video.id"
-                    class="group cursor-pointer"
+                    :to="`/videos/${video.id}`"
+                    class="group block cursor-pointer"
                   >
                     <div class="relative mb-4 aspect-video overflow-hidden rounded-lg shadow-xl">
+                      <template v-if="getVideoSrc(video)">
+                        <video
+                          :src="getVideoSrc(video)"
+                          :poster="getVideoPoster(video)"
+                          class="h-full w-full object-cover"
+                          muted
+                          preload="metadata"
+                        ></video>
+                      </template>
+
+                      <img
+                        v-else
+                        :src="getVideoPoster(video)"
+                        :alt="video.title || 'Video preview'"
+                        class="h-full w-full object-cover"
+                      />
+
                       <div class="absolute inset-0 bg-gradient-to-br from-primary/20 to-tertiary/20"></div>
                       <div class="absolute inset-0 bg-black/40 transition-colors group-hover:bg-black/20"></div>
+
                       <div class="absolute bottom-3 right-3 rounded bg-black/80 px-2 py-1 text-[10px] font-bold text-white">
-                        {{ video.duration || '00:00' }}
+                        {{ formatDuration(video.duration) }}
+                      </div>
+
+                      <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
+                        <span class="material-symbols-outlined text-6xl text-white opacity-80">
+                          play_circle
+                        </span>
                       </div>
                     </div>
 
@@ -244,7 +269,14 @@
                       </span>
                       <span>{{ formatDate(video.created_at) }}</span>
                     </div>
-                  </div>
+
+                    <div class="mt-4">
+                      <span class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-black transition-colors group-hover:bg-zinc-200">
+                        Open Video
+                        <span class="material-symbols-outlined text-sm">open_in_new</span>
+                      </span>
+                    </div>
+                  </RouterLink>
                 </div>
 
                 <div v-if="totalPages > 1" class="mt-8 flex flex-wrap items-center justify-center gap-2">
@@ -349,6 +381,9 @@ const isOwnProfile = computed(() => {
   return Number(authUser.value?.id) === Number(userId.value)
 })
 
+const APP_URL = (import.meta.env.VITE_APP_URL || 'http://localhost:8000').replace(/\/$/, '')
+const STORAGE_BASE = `${APP_URL}/storage`
+
 const normalizeCollection = (payload) => {
   if (Array.isArray(payload)) return payload
   if (Array.isArray(payload?.data)) return payload.data
@@ -357,9 +392,57 @@ const normalizeCollection = (payload) => {
 }
 
 const buildStorageUrl = (path) => {
-  if (!path) return null
-  if (path.startsWith('http')) return path
-  return `http://localhost:8000/storage/${path}`
+  if (!path || typeof path !== 'string') return null
+
+  const value = path.trim()
+  if (!value) return null
+
+  if (value.startsWith('http://nginx/storage/')) {
+    return value.replace('http://nginx/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('https://nginx/storage/')) {
+    return value.replace('https://nginx/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('http://app/storage/')) {
+    return value.replace('http://app/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('https://app/storage/')) {
+    return value.replace('https://app/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('http://localhost/storage/')) {
+    return value.replace('http://localhost/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('https://localhost/storage/')) {
+    return value.replace('https://localhost/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    return value
+  }
+
+  const clean = value.replace(/^\/+/, '')
+
+  if (clean.startsWith('storage/')) {
+    return `${APP_URL}/${clean}`
+  }
+
+  return `${STORAGE_BASE}/${clean}`
+}
+
+const getVideoSrc = (video) => buildStorageUrl(video?.url)
+
+const getVideoPoster = (video) => {
+  return buildStorageUrl(
+    video?.thumbnail ||
+    video?.thumbnail_url ||
+    video?.stream?.thumbnail ||
+    video?.stream?.thumbnail_url
+  ) || `https://ui-avatars.com/api/?name=${encodeURIComponent(video?.title || 'Video')}&background=111111&color=ffffff&size=512`
 }
 
 const normalizeUsersWithAvatar = (users = []) => {
@@ -470,6 +553,29 @@ watch(
 const formatDate = (date) => {
   if (!date) return 'Unknown date'
   return new Date(date).toLocaleDateString()
+}
+
+const formatDuration = (value) => {
+  if (value === null || value === undefined || value === '') {
+    return '00:00'
+  }
+
+  const asNumber = Number(value)
+
+  if (!Number.isFinite(asNumber)) {
+    return String(value)
+  }
+
+  const totalSeconds = Math.max(0, Math.floor(asNumber))
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  if (hours > 0) {
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+  }
+
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
 const loadProfile = async () => {
