@@ -12,7 +12,7 @@
 
         <main
           :class="[
-            'min-w-0 flex min-h-screen flex-1 flex-col pt-0 transition-all duration-300 pt-[72px]',
+            'min-w-0 flex min-h-screen flex-1 flex-col pt-20 transition-all duration-300 pt-[72px]',
             sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
           ]"
         >
@@ -342,10 +342,11 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { Room, RoomEvent, Track } from 'livekit-client'
 import api from '@/services/api'
+import { useStreamRealtime } from '@/composables/useStreamRealtime'
 import TopNavbar from '@/components/layout/TopNavbar.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 
@@ -374,23 +375,13 @@ const authUser = ref(null)
 const viewerRoom = ref(null)
 const remoteVideoEl = ref(null)
 const remoteAudioEl = ref(null)
+const pollIntervalId = ref(null)
+
+const { subscribeToStreamChannel, unsubscribeFromStreamChannel } = useStreamRealtime(stream)
 
 const commentForm = ref({
   content: '',
 })
-
-const reactionBoosts = reactive({
-  like: 0,
-  love: 0,
-  haha: 0,
-  wow: 0,
-  sad: 0,
-  angry: 0,
-  clap: 0,
-  fire: 0,
-})
-
-const totalReactionBoost = ref(0)
 
 const reactionOptions = [
   { type: 'like', emoji: '👍' },
@@ -418,7 +409,8 @@ const normalizeCollection = (payload) => {
 
 const getStoredUser = () => {
   try {
-    return JSON.parse(localStorage.getItem('user') || 'null')
+    const stored = JSON.parse(localStorage.getItem('user') || 'null')
+    return stored?.user || stored || null
   } catch {
     return null
   }
@@ -443,8 +435,9 @@ const playerBackgroundStyle = computed(() => {
   }
 })
 
-const baseReactionsSummary = computed(() => {
+const reactionsSummary = computed(() => {
   const summary = stream.value?.reactions_summary || {}
+
   return {
     like: Number(summary.like || 0),
     love: Number(summary.love || 0),
@@ -457,22 +450,8 @@ const baseReactionsSummary = computed(() => {
   }
 })
 
-const reactionsSummary = computed(() => {
-  return {
-    like: baseReactionsSummary.value.like + reactionBoosts.like,
-    love: baseReactionsSummary.value.love + reactionBoosts.love,
-    haha: baseReactionsSummary.value.haha + reactionBoosts.haha,
-    wow: baseReactionsSummary.value.wow + reactionBoosts.wow,
-    sad: baseReactionsSummary.value.sad + reactionBoosts.sad,
-    angry: baseReactionsSummary.value.angry + reactionBoosts.angry,
-    clap: baseReactionsSummary.value.clap + reactionBoosts.clap,
-    fire: baseReactionsSummary.value.fire + reactionBoosts.fire,
-  }
-})
-
 const totalReactions = computed(() => {
-  const base = Number(stream.value?.reactions_count || 0)
-  return base + totalReactionBoost.value
+  return Number(stream.value?.reactions_count || 0)
 })
 
 const displayedComments = computed(() => {
@@ -612,27 +591,39 @@ const connectViewerRoom = async () => {
   }
 }
 
-const loadStream = async () => {
-  loading.value = true
+const loadStream = async ({ silent = false } = {}) => {
+  if (!silent) {
+    loading.value = true
+  }
 
   try {
     const response = await api.get(`/stream/streams/${route.params.id}`)
     stream.value = response.data?.data || null
-
-    reactionBoosts.like = 0
-    reactionBoosts.love = 0
-    reactionBoosts.haha = 0
-    reactionBoosts.wow = 0
-    reactionBoosts.sad = 0
-    reactionBoosts.angry = 0
-    reactionBoosts.clap = 0
-    reactionBoosts.fire = 0
-    totalReactionBoost.value = 0
   } catch (error) {
     console.error('Failed to load stream', error)
-    stream.value = null
+
+    if (!silent) {
+      stream.value = null
+    }
   } finally {
-    loading.value = false
+    if (!silent) {
+      loading.value = false
+    }
+  }
+}
+
+const startPolling = () => {
+  stopPolling()
+
+  pollIntervalId.value = window.setInterval(() => {
+    loadStream({ silent: true })
+  }, 2000)
+}
+
+const stopPolling = () => {
+  if (pollIntervalId.value) {
+    clearInterval(pollIntervalId.value)
+    pollIntervalId.value = null
   }
 }
 
@@ -674,10 +665,25 @@ const toggleFollow = async () => {
 }
 
 const submitReaction = async (type) => {
-  if (!stream.value || stream.value.status !== 'live') return
+  if (!stream.value || stream.value.status !== 'live' || reactionLoading.value) return
 
-  reactionBoosts[type] += 1
-  totalReactionBoost.value += 1
+  reactionLoading.value = true
+  showReactionsMenu.value = false
+
+  const previousSummary = {
+    ...(stream.value.reactions_summary || {}),
+  }
+
+  const previousCount = Number(stream.value.reactions_count || 0)
+
+  stream.value = {
+    ...stream.value,
+    reactions_summary: {
+      ...previousSummary,
+      [type]: Number(previousSummary[type] || 0) + 1,
+    },
+    reactions_count: previousCount + 1,
+  }
 
   try {
     await api.post('/reaction/reactions', {
@@ -685,9 +691,15 @@ const submitReaction = async (type) => {
       type,
     })
   } catch (error) {
-    reactionBoosts[type] -= 1
-    totalReactionBoost.value -= 1
+    stream.value = {
+      ...stream.value,
+      reactions_summary: previousSummary,
+      reactions_count: previousCount,
+    }
+
     console.error('Failed to submit reaction', error)
+  } finally {
+    reactionLoading.value = false
   }
 }
 
@@ -707,10 +719,18 @@ const submitComment = async () => {
     const newComment = response.data?.data
 
     if (newComment) {
-      stream.value = {
-        ...stream.value,
-        comments: [newComment, ...(Array.isArray(stream.value.comments) ? stream.value.comments : [])],
-        comments_count: Number(stream.value.comments_count || 0) + 1,
+      const currentComments = Array.isArray(stream.value.comments) ? stream.value.comments : []
+
+      const exists = currentComments.some(
+        (comment) => Number(comment.id) === Number(newComment.id)
+      )
+
+      if (!exists) {
+        stream.value = {
+          ...stream.value,
+          comments: [newComment, ...currentComments],
+          comments_count: Number(stream.value.comments_count || 0) + 1,
+        }
       }
     }
 
@@ -732,11 +752,15 @@ onMounted(async () => {
   }
 
   await loadStream()
+  subscribeToStreamChannel(route.params.id)
+  startPolling()
   await loadFollowingState()
   await connectViewerRoom()
 })
 
 onBeforeUnmount(() => {
+  stopPolling()
+  unsubscribeFromStreamChannel()
   disconnectViewerRoom()
   window.removeEventListener('resize', handleResize)
   document.body.style.overflow = ''

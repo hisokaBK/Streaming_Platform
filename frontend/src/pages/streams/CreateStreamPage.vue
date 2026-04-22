@@ -70,6 +70,80 @@
                       </p>
                     </div>
 
+                    <div class="space-y-3">
+                      <label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+                        Thumbnail
+                      </label>
+
+                      <div class="rounded-2xl border border-dashed border-outline-variant/30 bg-surface-container-low p-4 sm:p-5">
+                        <input
+                          ref="thumbnailInput"
+                          type="file"
+                          accept="image/*"
+                          class="hidden"
+                          @change="handleThumbnailChange"
+                        />
+
+                        <div v-if="thumbnailPreview" class="space-y-4">
+                          <div class="overflow-hidden rounded-2xl border border-white/10 bg-black">
+                            <img
+                              :src="thumbnailPreview"
+                              alt="Thumbnail preview"
+                              class="aspect-video w-full object-cover"
+                            />
+                          </div>
+
+                          <div class="flex flex-wrap gap-3">
+                            <button
+                              type="button"
+                              class="rounded-full bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-on-primary shadow-[0_0_15px_rgba(246,128,255,0.25)] transition hover:scale-105 active:scale-95"
+                              @click="openThumbnailPicker"
+                            >
+                              Change Thumbnail
+                            </button>
+
+                            <button
+                              type="button"
+                              class="rounded-full border border-outline-variant/30 px-4 py-2 text-xs font-bold uppercase tracking-widest text-on-surface-variant transition hover:bg-surface-container-high hover:text-on-surface"
+                              @click="removeThumbnail"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+
+                        <div
+                          v-else
+                          class="flex flex-col items-center justify-center gap-4 rounded-2xl bg-surface-container-high px-6 py-10 text-center"
+                        >
+                          <div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            <span class="material-symbols-outlined text-3xl">image</span>
+                          </div>
+
+                          <div>
+                            <p class="mb-1 text-sm font-bold text-on-surface">
+                              Upload a thumbnail for your live
+                            </p>
+                            <p class="text-xs text-on-surface-variant">
+                              Recommended: landscape image for better preview
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            class="rounded-full bg-primary px-5 py-3 text-xs font-bold uppercase tracking-widest text-on-primary shadow-[0_0_15px_rgba(246,128,255,0.25)] transition hover:scale-105 active:scale-95"
+                            @click="openThumbnailPicker"
+                          >
+                            Choose Image
+                          </button>
+                        </div>
+                      </div>
+
+                      <p v-if="errors.thumbnail" class="text-sm text-error">
+                        {{ errors.thumbnail[0] }}
+                      </p>
+                    </div>
+
                     <div class="space-y-4">
                       <div class="flex items-center justify-between gap-3">
                         <label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
@@ -179,19 +253,19 @@
               <div class="space-y-8">
                 <section class="relative overflow-hidden rounded-lg border border-outline-variant/10 bg-surface-container-high">
                   <img
-                    src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop"
+                    :src="thumbnailPreview || defaultPreviewImage"
                     alt="Streaming setup preview"
-                    class="h-full w-full object-cover grayscale brightness-50 transition-all duration-700"
+                    class="h-full w-full object-cover brightness-50 transition-all duration-700"
                   />
 
-                  <div class="absolute inset-0 flex flex-col items-center justify-center bg-black/60 px-6 text-center backdrop-blur-[2px]">
+                  <div class="absolute inset-0 flex flex-col items-center justify-center bg-black/55 px-6 text-center backdrop-blur-[2px]">
                     <span class="material-symbols-outlined mb-2 text-4xl text-primary">live_tv</span>
                     <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
                       Stream Setup Preview
                     </span>
 
                     <p class="mt-3 max-w-xs text-sm text-on-surface-variant">
-                      Your stream will start with the title, description, and categories you choose here.
+                      Your stream thumbnail will appear here before you go live.
                     </p>
                   </div>
                 </section>
@@ -204,6 +278,7 @@
                   <div class="space-y-3 text-sm text-on-surface-variant">
                     <p>• Add a clear stream title so viewers understand your content quickly.</p>
                     <p>• Write a short description to make your stream more attractive.</p>
+                    <p>• Upload a clean thumbnail so your live looks more professional.</p>
                     <p>• Choose the right categories to help viewers find your broadcast.</p>
                   </div>
                 </section>
@@ -235,6 +310,13 @@ const createLoading = ref(false)
 const generalError = ref('')
 const successMessage = ref('')
 const errors = ref({})
+
+const thumbnailInput = ref(null)
+const thumbnailFile = ref(null)
+const thumbnailPreview = ref('')
+
+const defaultPreviewImage =
+  'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop'
 
 const form = reactive({
   title: '',
@@ -314,6 +396,49 @@ const selectedCategoriesPreview = computed(() => {
   )
 })
 
+const openThumbnailPicker = () => {
+  thumbnailInput.value?.click()
+}
+
+const revokeThumbnailPreview = () => {
+  if (thumbnailPreview.value && thumbnailPreview.value.startsWith('blob:')) {
+    URL.revokeObjectURL(thumbnailPreview.value)
+  }
+}
+
+const handleThumbnailChange = (event) => {
+  const file = event.target.files?.[0] || null
+
+  revokeThumbnailPreview()
+
+  thumbnailFile.value = file
+
+  if (file) {
+    thumbnailPreview.value = URL.createObjectURL(file)
+  } else {
+    thumbnailPreview.value = ''
+  }
+}
+
+const removeThumbnail = () => {
+  revokeThumbnailPreview()
+  thumbnailFile.value = null
+  thumbnailPreview.value = ''
+
+  if (thumbnailInput.value) {
+    thumbnailInput.value.value = ''
+  }
+}
+
+const resetForm = () => {
+  form.title = ''
+  form.description = ''
+  form.category_ids = []
+  errors.value = {}
+  generalError.value = ''
+  removeThumbnail()
+}
+
 const handleCreateStream = async () => {
   createLoading.value = true
   generalError.value = ''
@@ -321,17 +446,29 @@ const handleCreateStream = async () => {
   errors.value = {}
 
   try {
-    const payload = {
-      title: form.title.trim(),
-      description: form.description.trim(),
-      category_ids: form.category_ids.map((id) => Number(id)),
+    const payload = new FormData()
+    payload.append('title', form.title.trim())
+    payload.append('description', form.description.trim())
+
+    form.category_ids.forEach((id, index) => {
+      payload.append(`category_ids[${index}]`, Number(id))
+    })
+
+    if (thumbnailFile.value) {
+      payload.append('thumbnail', thumbnailFile.value)
     }
 
-    const response = await api.post('/stream/streams', payload)
+    const response = await api.post('/stream/streams', payload, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
 
     successMessage.value = response.data?.message || 'Stream created successfully.'
 
     const streamId = response.data?.data?.id
+
+    resetForm()
 
     if (streamId) {
       setTimeout(() => {
@@ -364,6 +501,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  revokeThumbnailPreview()
   window.removeEventListener('resize', handleResize)
   document.body.style.overflow = ''
 })

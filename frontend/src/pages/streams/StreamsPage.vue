@@ -12,7 +12,7 @@
 
         <main
           :class="[
-            'min-w-0 flex-1 px-4 pb-20 pt-4 transition-all duration-300 sm:px-6 lg:px-8 pt-[72px]',
+            'min-w-0 flex-1 px-4 pb-27 pt-4 transition-all duration-300 sm:px-6 lg:px-8 pt-[72px]',
             sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'
           ]"
         >
@@ -25,6 +25,52 @@
                 <p class="max-w-lg font-body text-sm text-on-surface-variant sm:text-base">
                   Discover the hottest streamers across the globe in real-time. Exclusive content, immersive experiences.
                 </p>
+              </div>
+            </div>
+
+            <div class="no-scrollbar mb-6 overflow-x-auto pb-2">
+              <div class="flex w-max items-center gap-3 sm:gap-4">
+                <button
+                  type="button"
+                  class="rounded-full border px-4 py-2.5 text-sm font-semibold transition-all sm:px-5"
+                  :class="selectedStatus === 'all'
+                    ? 'border-primary/20 bg-primary/10 text-primary'
+                    : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-bright'"
+                  @click="changeStatus('all')"
+                >
+                  <span class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-lg">filter_alt</span>
+                    All Status
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  class="rounded-full border px-4 py-2.5 text-sm font-semibold transition-all sm:px-5"
+                  :class="selectedStatus === 'live'
+                    ? 'border-primary/20 bg-primary/10 text-primary'
+                    : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-bright'"
+                  @click="changeStatus('live')"
+                >
+                  <span class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-lg">live_tv</span>
+                    Live Now
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  class="rounded-full border px-4 py-2.5 text-sm font-semibold transition-all sm:px-5"
+                  :class="selectedStatus === 'ended'
+                    ? 'border-primary/20 bg-primary/10 text-primary'
+                    : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-bright'"
+                  @click="changeStatus('ended')"
+                >
+                  <span class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-lg">history</span>
+                    Ended
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -95,7 +141,7 @@
                 No streams found
               </h2>
               <p class="text-on-surface-variant">
-                There are no streams available for this category yet.
+                There are no streams available for this filter yet.
               </p>
             </div>
 
@@ -107,8 +153,14 @@
                 class="group cursor-pointer"
               >
                 <div class="relative mb-4 aspect-video overflow-hidden rounded-lg shadow-2xl transition-transform duration-300 group-hover:-translate-y-2">
+                  <img
+                    :src="getThumbnail(stream.thumbnail_url || stream.thumbnail, stream.title)"
+                    :alt="stream.title || 'Stream thumbnail'"
+                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+
                   <div class="absolute inset-0 bg-gradient-to-br from-primary/20 to-tertiary/10"></div>
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent"></div>
 
                   <div class="absolute left-4 top-4 flex flex-wrap items-center gap-2">
                     <span
@@ -135,7 +187,7 @@
 
                 <div class="flex gap-4">
                   <img
-                    :src="getAvatar(stream.user?.avatar, stream.user?.name)"
+                    :src="getAvatar(stream.user?.avatar_url || stream.user?.avatar, stream.user?.name)"
                     :alt="stream.user?.name || 'Avatar'"
                     class="h-12 w-12 flex-shrink-0 rounded-full border-2 border-surface-container-highest object-cover"
                   />
@@ -149,7 +201,7 @@
                       {{ stream.user?.name || 'Unknown streamer' }}
                     </p>
 
-                    <p class="mb-3 line-clamp-2 text-sm text-zinc-500">
+                    <p class="mb-3 line-clamp-2 text-sm text-zinc-400">
                       {{ stream.description || 'No description provided.' }}
                     </p>
 
@@ -239,6 +291,7 @@ const loading = ref(false)
 const streams = ref([])
 const categories = ref([])
 const selectedCategory = ref('all')
+const selectedStatus = ref('all')
 
 const meta = ref({
   current_page: 1,
@@ -246,6 +299,9 @@ const meta = ref({
   per_page: 10,
   total: 0,
 })
+
+const APP_URL = (import.meta.env.VITE_APP_URL || 'http://localhost:8000').replace(/\/$/, '')
+const STORAGE_BASE = `${APP_URL}/storage`
 
 const normalizeCollection = (payload) => {
   if (Array.isArray(payload)) return payload
@@ -257,17 +313,66 @@ const normalizeCollection = (payload) => {
 }
 
 const buildStorageUrl = (path) => {
-  if (!path) return null
-  if (path.startsWith('http')) return path
-  return `http://localhost:8000/storage/${path}`
+  if (!path || typeof path !== 'string') return null
+
+  const value = path.trim()
+  if (!value) return null
+
+  if (value.startsWith('http://nginx/storage/')) {
+    return value.replace('http://nginx/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('https://nginx/storage/')) {
+    return value.replace('https://nginx/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('http://app/storage/')) {
+    return value.replace('http://app/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('https://app/storage/')) {
+    return value.replace('https://app/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('http://localhost/storage/')) {
+    return value.replace('http://localhost/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('https://localhost/storage/')) {
+    return value.replace('https://localhost/storage', STORAGE_BASE)
+  }
+
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    return value
+  }
+
+  const clean = value.replace(/^\/+/, '')
+
+  if (clean.startsWith('storage/')) {
+    return `${APP_URL}/${clean}`
+  }
+
+  return `${STORAGE_BASE}/${clean}`
 }
 
 const getAvatar = (avatar, name = 'User') => {
-  if (avatar) {
-    return buildStorageUrl(avatar)
+  const fixedAvatar = buildStorageUrl(avatar)
+
+  if (fixedAvatar) {
+    return fixedAvatar
   }
 
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=111111&color=ffffff&size=256`
+}
+
+const getThumbnail = (thumbnail, title = 'Stream') => {
+  const fixedThumbnail = buildStorageUrl(thumbnail)
+
+  if (fixedThumbnail) {
+    return fixedThumbnail
+  }
+
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(title)}&background=111111&color=ffffff&size=512`
 }
 
 const handleSidebarToggle = () => {
@@ -294,9 +399,16 @@ watch(mobileSidebarOpen, (isOpen) => {
 const loadCategories = async () => {
   try {
     const response = await api.get('/categories')
-    categories.value = normalizeCollection(response.data)
+
+    categories.value = normalizeCollection(response.data).map((category) => ({
+      id: String(category.id),
+      name: category.name,
+    }))
   } catch (error) {
-    console.error('Failed to load categories', error)
+    console.error('Failed to load categories', {
+      status: error.response?.status,
+      data: error.response?.data,
+    })
     categories.value = []
   }
 }
@@ -305,15 +417,19 @@ const loadStreams = async (page = 1) => {
   loading.value = true
 
   try {
-    let response
+    const params = { page }
 
-    if (selectedCategory.value === 'all') {
-      response = await api.get(`/stream/streams?page=${page}`)
-    } else {
-      response = await api.get(`/stream/streams/category/${selectedCategory.value}?page=${page}`)
+    if (selectedCategory.value !== 'all') {
+      params.category_id = selectedCategory.value
     }
 
-    streams.value = response.data?.data || []
+    if (selectedStatus.value !== 'all') {
+      params.status = selectedStatus.value
+    }
+
+    const response = await api.get('/stream/streams', { params })
+
+    streams.value = Array.isArray(response.data?.data) ? response.data.data : normalizeCollection(response.data)
     meta.value = response.data?.meta || {
       current_page: 1,
       last_page: 1,
@@ -323,13 +439,24 @@ const loadStreams = async (page = 1) => {
   } catch (error) {
     console.error('Failed to load streams', error)
     streams.value = []
+    meta.value = {
+      current_page: 1,
+      last_page: 1,
+      per_page: 10,
+      total: 0,
+    }
   } finally {
     loading.value = false
   }
 }
 
 const changeCategory = async (categoryId) => {
-  selectedCategory.value = categoryId
+  selectedCategory.value = String(categoryId)
+  await loadStreams(1)
+}
+
+const changeStatus = async (status) => {
+  selectedStatus.value = status
   await loadStreams(1)
 }
 

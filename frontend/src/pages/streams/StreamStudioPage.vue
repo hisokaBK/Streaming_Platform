@@ -1,461 +1,3 @@
-<script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { Room, RoomEvent, Track } from 'livekit-client'
-import api from '@/services/api'
-import TopNavbar from '@/components/layout/TopNavbar.vue'
-import AppSidebar from '@/components/layout/AppSidebar.vue'
-
-const route = useRoute()
-const router = useRouter()
-
-const sidebarCollapsed = ref(false)
-const mobileSidebarOpen = ref(false)
-const isMobileView = ref(false)
-
-const room = ref(null)
-const localVideoEl = ref(null)
-
-const loading = ref(true)
-const connecting = ref(false)
-const connected = ref(false)
-const errorMessage = ref('')
-const debugMessage = ref('')
-
-const stream = ref(null)
-const viewersCount = ref(0)
-
-const showChat = ref(false)
-const showDescription = ref(false)
-const showEditPanel = ref(false)
-const showEndConfirmModal = ref(false)
-
-const updateLoading = ref(false)
-const endLoading = ref(false)
-const commentLoading = ref(false)
-
-const cameraEnabled = ref(true)
-const microphoneEnabled = ref(true)
-const screenShareEnabled = ref(false)
-
-const commentError = ref('')
-const pollIntervalId = ref(null)
-const previewTrack = ref(null)
-
-const commentForm = reactive({
-  content: '',
-})
-
-const editForm = reactive({
-  title: '',
-  description: '',
-  category_ids: [],
-})
-
-const reactionOptions = [
-  { type: 'like', emoji: '👍' },
-  { type: 'love', emoji: '❤️' },
-  { type: 'haha', emoji: '😂' },
-  { type: 'wow', emoji: '😮' },
-  { type: 'sad', emoji: '😢' },
-  { type: 'angry', emoji: '😡' },
-  { type: 'fire', emoji: '🔥' },
-  { type: 'clap', emoji: '👏' },
-]
-
-const buildStorageUrl = (path) => {
-  if (!path) return null
-  if (path.startsWith('http')) return path
-  return `http://localhost:8000/storage/${path}`
-}
-
-const getAvatar = (avatar, name = 'User') => {
-  if (avatar) return buildStorageUrl(avatar)
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=111111&color=ffffff&size=256`
-}
-
-const playerBackgroundStyle = computed(() => {
-  const thumbnail = buildStorageUrl(stream.value?.thumbnail)
-
-  return {
-    backgroundImage: thumbnail
-      ? `url('${thumbnail}')`
-      : "url('https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop')",
-  }
-})
-
-const reactionsSummary = computed(() => {
-  const summary = stream.value?.reactions_summary || {}
-
-  return {
-    like: Number(summary.like || 0),
-    love: Number(summary.love || 0),
-    haha: Number(summary.haha || 0),
-    wow: Number(summary.wow || 0),
-    sad: Number(summary.sad || 0),
-    angry: Number(summary.angry || 0),
-    clap: Number(summary.clap || 0),
-    fire: Number(summary.fire || 0),
-  }
-})
-
-const totalReactions = computed(() => {
-  return Object.values(reactionsSummary.value).reduce((sum, value) => sum + Number(value || 0), 0)
-})
-
-const displayedComments = computed(() => {
-  const list = Array.isArray(stream.value?.comments) ? [...stream.value.comments] : []
-  return list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
-})
-
-const selectedCategoriesPreview = computed(() => {
-  const allCategories = Array.isArray(stream.value?.categories) ? stream.value.categories : []
-
-  return allCategories.filter((category) =>
-    editForm.category_ids.includes(Number(category.id))
-  )
-})
-
-const formatCompact = (value) => {
-  const number = Number(value || 0)
-  if (number >= 1000000) return `${(number / 1000000).toFixed(1)}M`
-  if (number >= 1000) return `${(number / 1000).toFixed(1)}k`
-  return `${number}`
-}
-
-const formatCommentTime = (date) => {
-  if (!date) return '--:--'
-  const d = new Date(date)
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
-
-const handleSidebarToggle = () => {
-  if (window.innerWidth < 768) {
-    mobileSidebarOpen.value = !mobileSidebarOpen.value
-    return
-  }
-
-  sidebarCollapsed.value = !sidebarCollapsed.value
-}
-
-const handleResize = () => {
-  isMobileView.value = window.innerWidth < 1280
-
-  if (window.innerWidth >= 768) {
-    mobileSidebarOpen.value = false
-  }
-
-  if (window.innerWidth >= 1280) {
-    showChat.value = true
-  }
-}
-
-watch([mobileSidebarOpen, showChat, isMobileView], ([sidebarOpen, chatOpen, mobile]) => {
-  const lockScroll = sidebarOpen || (mobile && chatOpen)
-  document.body.style.overflow = lockScroll ? 'hidden' : ''
-})
-
-const applyStreamToForm = () => {
-  if (!stream.value) return
-
-  editForm.title = stream.value.title || ''
-  editForm.description = stream.value.description || ''
-  editForm.category_ids = (stream.value.categories || []).map((category) => Number(category.id))
-}
-
-const loadStream = async ({ silent = false } = {}) => {
-  if (!silent) loading.value = true
-
-  try {
-    const response = await api.get(`/stream/streams/${route.params.id}`)
-    stream.value = response.data?.data || null
-
-    if (!showEditPanel.value) {
-      applyStreamToForm()
-    }
-  } catch (error) {
-    console.error('Failed to load stream', error)
-    if (!silent) {
-      stream.value = null
-      errorMessage.value = error.response?.data?.message || 'Failed to load stream.'
-    }
-  } finally {
-    if (!silent) loading.value = false
-  }
-}
-
-const startPolling = () => {
-  stopPolling()
-
-  pollIntervalId.value = window.setInterval(() => {
-    loadStream({ silent: true })
-  }, 2000)
-}
-
-const stopPolling = () => {
-  if (pollIntervalId.value) {
-    clearInterval(pollIntervalId.value)
-    pollIntervalId.value = null
-  }
-}
-
-const syncViewersCount = () => {
-  viewersCount.value = room.value ? room.value.remoteParticipants.size : 0
-}
-
-const attachPreviewTrack = async () => {
-  await nextTick()
-
-  if (!room.value || !localVideoEl.value) return
-
-  const publications = Array.from(room.value.localParticipant.videoTrackPublications.values())
-
-  const screenPublication = publications.find((pub) => pub.source === Track.Source.ScreenShare)
-  const cameraPublication = publications.find((pub) => pub.source === Track.Source.Camera)
-
-  const trackToUse = screenPublication?.videoTrack || cameraPublication?.videoTrack
-
-  if (previewTrack.value && previewTrack.value !== trackToUse && localVideoEl.value) {
-    previewTrack.value.detach(localVideoEl.value)
-  }
-
-  previewTrack.value = trackToUse || null
-
-  if (trackToUse && localVideoEl.value) {
-    trackToUse.attach(localVideoEl.value)
-    localVideoEl.value.autoplay = true
-    localVideoEl.value.playsInline = true
-    localVideoEl.value.muted = true
-  }
-}
-
-const disconnectStudio = () => {
-  stopPolling()
-
-  if (previewTrack.value && localVideoEl.value) {
-    previewTrack.value.detach(localVideoEl.value)
-  }
-
-  if (room.value) {
-    room.value.disconnect()
-    room.value = null
-  }
-
-  previewTrack.value = null
-  viewersCount.value = 0
-  connected.value = false
-  connecting.value = false
-}
-
-const connectStudio = async () => {
-  try {
-    connecting.value = true
-    debugMessage.value = 'Requesting studio token...'
-    errorMessage.value = ''
-
-    await loadStream()
-
-    const response = await api.post(`/stream/streams/${route.params.id}/studio-token`)
-    const { token, url, room_name } = response.data?.data || {}
-
-    if (!token || !url || !room_name) {
-      throw new Error('Token response is incomplete.')
-    }
-
-    debugMessage.value = `Connecting to ${room_name}...`
-
-    const liveRoom = new Room()
-    room.value = liveRoom
-
-    liveRoom.on(RoomEvent.ParticipantConnected, () => {
-      syncViewersCount()
-    })
-
-    liveRoom.on(RoomEvent.ParticipantDisconnected, () => {
-      syncViewersCount()
-    })
-
-    liveRoom.on(RoomEvent.LocalTrackPublished, async () => {
-      await attachPreviewTrack()
-    })
-
-    liveRoom.on(RoomEvent.LocalTrackUnpublished, async () => {
-      await attachPreviewTrack()
-    })
-
-    await liveRoom.connect(url, token)
-
-    debugMessage.value = 'Connected. Enabling camera...'
-    await liveRoom.localParticipant.setCameraEnabled(true)
-
-    debugMessage.value = 'Enabling microphone...'
-    await liveRoom.localParticipant.setMicrophoneEnabled(true)
-
-    cameraEnabled.value = true
-    microphoneEnabled.value = true
-    screenShareEnabled.value = false
-
-    connected.value = true
-    syncViewersCount()
-    await attachPreviewTrack()
-
-    debugMessage.value = 'Live started successfully.'
-    startPolling()
-  } catch (error) {
-    console.error('Live studio error:', error)
-    console.error('Live studio response:', error?.response?.data)
-
-    errorMessage.value =
-      error?.response?.data?.message ||
-      error?.message ||
-      'Failed to start live studio.'
-  } finally {
-    connecting.value = false
-    loading.value = false
-  }
-}
-
-const toggleCamera = async () => {
-  if (!room.value) return
-
-  try {
-    const nextState = !cameraEnabled.value
-    await room.value.localParticipant.setCameraEnabled(nextState)
-    cameraEnabled.value = nextState
-    await attachPreviewTrack()
-  } catch (error) {
-    console.error('Failed to toggle camera', error)
-  }
-}
-
-const toggleMicrophone = async () => {
-  if (!room.value) return
-
-  try {
-    const nextState = !microphoneEnabled.value
-    await room.value.localParticipant.setMicrophoneEnabled(nextState)
-    microphoneEnabled.value = nextState
-  } catch (error) {
-    console.error('Failed to toggle microphone', error)
-  }
-}
-
-const toggleScreenShare = async () => {
-  if (!room.value) return
-
-  try {
-    const nextState = !screenShareEnabled.value
-    await room.value.localParticipant.setScreenShareEnabled(nextState)
-    screenShareEnabled.value = nextState
-    await attachPreviewTrack()
-  } catch (error) {
-    console.error('Failed to toggle screen share', error)
-    errorMessage.value = error?.message || 'Failed to toggle screen sharing.'
-  }
-}
-
-const toggleCategory = (categoryId) => {
-  const id = Number(categoryId)
-
-  if (editForm.category_ids.includes(id)) {
-    editForm.category_ids = editForm.category_ids.filter((item) => item !== id)
-  } else {
-    editForm.category_ids = [...editForm.category_ids, id]
-  }
-}
-
-const submitUpdate = async () => {
-  updateLoading.value = true
-
-  try {
-    const payload = {
-      title: editForm.title.trim(),
-      description: editForm.description.trim(),
-      category_ids: editForm.category_ids.map((id) => Number(id)),
-    }
-
-    const response = await api.put(`/stream/streams/${route.params.id}`, payload)
-    stream.value = response.data?.data || stream.value
-    applyStreamToForm()
-    showEditPanel.value = false
-  } catch (error) {
-    console.error('Failed to update stream', error)
-    errorMessage.value = error.response?.data?.message || 'Failed to update stream.'
-  } finally {
-    updateLoading.value = false
-  }
-}
-
-const submitComment = async () => {
-  const content = commentForm.content.trim()
-
-  if (!content || commentLoading.value || !stream.value) return
-
-  commentLoading.value = true
-  commentError.value = ''
-
-  try {
-    await api.post('/comments', {
-      stream_id: stream.value.id,
-      content,
-    })
-
-    commentForm.content = ''
-    await loadStream({ silent: true })
-  } catch (error) {
-    console.error('Failed to send comment', error)
-    commentError.value = error.response?.data?.message || 'Failed to send comment.'
-  } finally {
-    commentLoading.value = false
-  }
-}
-
-const openEndConfirmModal = () => {
-  showEndConfirmModal.value = true
-}
-
-const closeEndConfirmModal = () => {
-  if (endLoading.value) return
-  showEndConfirmModal.value = false
-}
-
-const endStream = async () => {
-  if (!stream.value) return
-
-  endLoading.value = true
-
-  try {
-    await api.patch(`/stream/streams/${route.params.id}/end`)
-    closeEndConfirmModal()
-    disconnectStudio()
-    await loadStream()
-    router.push(`/streams/${route.params.id}`)
-  } catch (error) {
-    console.error('Failed to end stream', error)
-    errorMessage.value = error.response?.data?.message || 'Failed to end stream.'
-  } finally {
-    endLoading.value = false
-  }
-}
-
-onMounted(() => {
-  handleResize()
-  window.addEventListener('resize', handleResize)
-
-  if (window.innerWidth < 1280) {
-    showChat.value = false
-  }
-
-  connectStudio()
-})
-
-onBeforeUnmount(() => {
-  disconnectStudio()
-  window.removeEventListener('resize', handleResize)
-  document.body.style.overflow = ''
-})
-</script>
-
 <template>
   <div class="dark">
     <div class="min-h-screen bg-background font-body text-on-surface selection:bg-primary/30">
@@ -991,6 +533,478 @@ onBeforeUnmount(() => {
     </div>
   </div>
 </template>
+
+<script setup>
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { Room, RoomEvent, Track } from 'livekit-client'
+import api from '@/services/api'
+import { useStreamRealtime } from '@/composables/useStreamRealtime'
+import TopNavbar from '@/components/layout/TopNavbar.vue'
+import AppSidebar from '@/components/layout/AppSidebar.vue'
+
+const route = useRoute()
+const router = useRouter()
+
+const sidebarCollapsed = ref(false)
+const mobileSidebarOpen = ref(false)
+const isMobileView = ref(false)
+
+const room = ref(null)
+const localVideoEl = ref(null)
+
+const loading = ref(true)
+const connecting = ref(false)
+const connected = ref(false)
+const errorMessage = ref('')
+const debugMessage = ref('')
+
+const stream = ref(null)
+const viewersCount = ref(0)
+
+const showChat = ref(false)
+const showDescription = ref(false)
+const showEditPanel = ref(false)
+const showEndConfirmModal = ref(false)
+
+const updateLoading = ref(false)
+const endLoading = ref(false)
+const commentLoading = ref(false)
+
+const cameraEnabled = ref(true)
+const microphoneEnabled = ref(true)
+const screenShareEnabled = ref(false)
+
+const commentError = ref('')
+const pollIntervalId = ref(null)
+const previewTrack = ref(null)
+
+const { subscribeToStreamChannel, unsubscribeFromStreamChannel } = useStreamRealtime(stream)
+
+const commentForm = reactive({
+  content: '',
+})
+
+const editForm = reactive({
+  title: '',
+  description: '',
+  category_ids: [],
+})
+
+const reactionOptions = [
+  { type: 'like', emoji: '👍' },
+  { type: 'love', emoji: '❤️' },
+  { type: 'haha', emoji: '😂' },
+  { type: 'wow', emoji: '😮' },
+  { type: 'sad', emoji: '😢' },
+  { type: 'angry', emoji: '😡' },
+  { type: 'fire', emoji: '🔥' },
+  { type: 'clap', emoji: '👏' },
+]
+
+const buildStorageUrl = (path) => {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  return `http://localhost:8000/storage/${path}`
+}
+
+const getAvatar = (avatar, name = 'User') => {
+  if (avatar) return buildStorageUrl(avatar)
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=111111&color=ffffff&size=256`
+}
+
+const playerBackgroundStyle = computed(() => {
+  const thumbnail = buildStorageUrl(stream.value?.thumbnail)
+
+  return {
+    backgroundImage: thumbnail
+      ? `url('${thumbnail}')`
+      : "url('https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop')",
+  }
+})
+
+const reactionsSummary = computed(() => {
+  const summary = stream.value?.reactions_summary || {}
+
+  return {
+    like: Number(summary.like || 0),
+    love: Number(summary.love || 0),
+    haha: Number(summary.haha || 0),
+    wow: Number(summary.wow || 0),
+    sad: Number(summary.sad || 0),
+    angry: Number(summary.angry || 0),
+    clap: Number(summary.clap || 0),
+    fire: Number(summary.fire || 0),
+  }
+})
+
+const totalReactions = computed(() => {
+  return Object.values(reactionsSummary.value).reduce((sum, value) => sum + Number(value || 0), 0)
+})
+
+const displayedComments = computed(() => {
+  const list = Array.isArray(stream.value?.comments) ? [...stream.value.comments] : []
+  return list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+})
+
+const selectedCategoriesPreview = computed(() => {
+  const allCategories = Array.isArray(stream.value?.categories) ? stream.value.categories : []
+
+  return allCategories.filter((category) =>
+    editForm.category_ids.includes(Number(category.id))
+  )
+})
+
+const formatCompact = (value) => {
+  const number = Number(value || 0)
+  if (number >= 1000000) return `${(number / 1000000).toFixed(1)}M`
+  if (number >= 1000) return `${(number / 1000).toFixed(1)}k`
+  return `${number}`
+}
+
+const formatCommentTime = (date) => {
+  if (!date) return '--:--'
+  const d = new Date(date)
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+const handleSidebarToggle = () => {
+  if (window.innerWidth < 768) {
+    mobileSidebarOpen.value = !mobileSidebarOpen.value
+    return
+  }
+
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+const handleResize = () => {
+  isMobileView.value = window.innerWidth < 1280
+
+  if (window.innerWidth >= 768) {
+    mobileSidebarOpen.value = false
+  }
+
+  if (window.innerWidth >= 1280) {
+    showChat.value = true
+  }
+}
+
+watch([mobileSidebarOpen, showChat, isMobileView], ([sidebarOpen, chatOpen, mobile]) => {
+  const lockScroll = sidebarOpen || (mobile && chatOpen)
+  document.body.style.overflow = lockScroll ? 'hidden' : ''
+})
+
+const applyStreamToForm = () => {
+  if (!stream.value) return
+
+  editForm.title = stream.value.title || ''
+  editForm.description = stream.value.description || ''
+  editForm.category_ids = (stream.value.categories || []).map((category) => Number(category.id))
+}
+
+const loadStream = async ({ silent = false } = {}) => {
+  if (!silent) loading.value = true
+
+  try {
+    const response = await api.get(`/stream/streams/${route.params.id}`)
+    stream.value = response.data?.data || null
+
+    if (!showEditPanel.value) {
+      applyStreamToForm()
+    }
+  } catch (error) {
+    console.error('Failed to load stream', error)
+    if (!silent) {
+      stream.value = null
+      errorMessage.value = error.response?.data?.message || 'Failed to load stream.'
+    }
+  } finally {
+    if (!silent) loading.value = false
+  }
+}
+
+const startPolling = () => {
+  stopPolling()
+
+  pollIntervalId.value = window.setInterval(() => {
+    loadStream({ silent: true })
+  }, 2000)
+}
+
+const stopPolling = () => {
+  if (pollIntervalId.value) {
+    clearInterval(pollIntervalId.value)
+    pollIntervalId.value = null
+  }
+}
+
+const syncViewersCount = () => {
+  viewersCount.value = room.value ? room.value.remoteParticipants.size : 0
+}
+
+const attachPreviewTrack = async () => {
+  await nextTick()
+
+  if (!room.value || !localVideoEl.value) return
+
+  const publications = Array.from(room.value.localParticipant.videoTrackPublications.values())
+
+  const screenPublication = publications.find((pub) => pub.source === Track.Source.ScreenShare)
+  const cameraPublication = publications.find((pub) => pub.source === Track.Source.Camera)
+
+  const trackToUse = screenPublication?.videoTrack || cameraPublication?.videoTrack
+
+  if (previewTrack.value && previewTrack.value !== trackToUse && localVideoEl.value) {
+    previewTrack.value.detach(localVideoEl.value)
+  }
+
+  previewTrack.value = trackToUse || null
+
+  if (trackToUse && localVideoEl.value) {
+    trackToUse.attach(localVideoEl.value)
+    localVideoEl.value.autoplay = true
+    localVideoEl.value.playsInline = true
+    localVideoEl.value.muted = true
+  }
+}
+
+const disconnectStudio = () => {
+  stopPolling()
+
+  if (previewTrack.value && localVideoEl.value) {
+    previewTrack.value.detach(localVideoEl.value)
+  }
+
+  if (room.value) {
+    room.value.disconnect()
+    room.value = null
+  }
+
+  previewTrack.value = null
+  viewersCount.value = 0
+  connected.value = false
+  connecting.value = false
+}
+
+const connectStudio = async () => {
+  try {
+    connecting.value = true
+    debugMessage.value = 'Requesting studio token...'
+    errorMessage.value = ''
+
+    await loadStream()
+    subscribeToStreamChannel(route.params.id)
+
+    const response = await api.post(`/stream/streams/${route.params.id}/studio-token`)
+    const { token, url, room_name } = response.data?.data || {}
+
+    if (!token || !url || !room_name) {
+      throw new Error('Token response is incomplete.')
+    }
+
+    debugMessage.value = `Connecting to ${room_name}...`
+
+    const liveRoom = new Room()
+    room.value = liveRoom
+
+    liveRoom.on(RoomEvent.ParticipantConnected, () => {
+      syncViewersCount()
+    })
+
+    liveRoom.on(RoomEvent.ParticipantDisconnected, () => {
+      syncViewersCount()
+    })
+
+    liveRoom.on(RoomEvent.LocalTrackPublished, async () => {
+      await attachPreviewTrack()
+    })
+
+    liveRoom.on(RoomEvent.LocalTrackUnpublished, async () => {
+      await attachPreviewTrack()
+    })
+
+    await liveRoom.connect(url, token)
+
+    debugMessage.value = 'Connected. Enabling camera...'
+    await liveRoom.localParticipant.setCameraEnabled(true)
+
+    debugMessage.value = 'Enabling microphone...'
+    await liveRoom.localParticipant.setMicrophoneEnabled(true)
+
+    cameraEnabled.value = true
+    microphoneEnabled.value = true
+    screenShareEnabled.value = false
+
+    connected.value = true
+    syncViewersCount()
+    await attachPreviewTrack()
+
+    debugMessage.value = 'Live started successfully.'
+    startPolling()
+  } catch (error) {
+    console.error('Live studio error:', error)
+    console.error('Live studio response:', error?.response?.data)
+
+    errorMessage.value =
+      error?.response?.data?.message ||
+      error?.message ||
+      'Failed to start live studio.'
+  } finally {
+    connecting.value = false
+    loading.value = false
+  }
+}
+
+const toggleCamera = async () => {
+  if (!room.value) return
+
+  try {
+    const nextState = !cameraEnabled.value
+    await room.value.localParticipant.setCameraEnabled(nextState)
+    cameraEnabled.value = nextState
+    await attachPreviewTrack()
+  } catch (error) {
+    console.error('Failed to toggle camera', error)
+  }
+}
+
+const toggleMicrophone = async () => {
+  if (!room.value) return
+
+  try {
+    const nextState = !microphoneEnabled.value
+    await room.value.localParticipant.setMicrophoneEnabled(nextState)
+    microphoneEnabled.value = nextState
+  } catch (error) {
+    console.error('Failed to toggle microphone', error)
+  }
+}
+
+const toggleScreenShare = async () => {
+  if (!room.value) return
+
+  try {
+    const nextState = !screenShareEnabled.value
+    await room.value.localParticipant.setScreenShareEnabled(nextState)
+    screenShareEnabled.value = nextState
+    await attachPreviewTrack()
+  } catch (error) {
+    console.error('Failed to toggle screen share', error)
+    errorMessage.value = error?.message || 'Failed to toggle screen sharing.'
+  }
+}
+
+const toggleCategory = (categoryId) => {
+  const id = Number(categoryId)
+
+  if (editForm.category_ids.includes(id)) {
+    editForm.category_ids = editForm.category_ids.filter((item) => item !== id)
+  } else {
+    editForm.category_ids = [...editForm.category_ids, id]
+  }
+}
+
+const submitUpdate = async () => {
+  updateLoading.value = true
+
+  try {
+    const payload = {
+      title: editForm.title.trim(),
+      description: editForm.description.trim(),
+      category_ids: editForm.category_ids.map((id) => Number(id)),
+    }
+
+    const response = await api.put(`/stream/streams/${route.params.id}`, payload)
+    stream.value = response.data?.data || stream.value
+    applyStreamToForm()
+    showEditPanel.value = false
+  } catch (error) {
+    console.error('Failed to update stream', error)
+    errorMessage.value = error.response?.data?.message || 'Failed to update stream.'
+  } finally {
+    updateLoading.value = false
+  }
+}
+
+const submitComment = async () => {
+  const content = commentForm.content.trim()
+
+  if (!content || commentLoading.value || !stream.value) return
+
+  commentLoading.value = true
+  commentError.value = ''
+
+  try {
+    const response = await api.post('/comments', {
+      stream_id: stream.value.id,
+      content,
+    })
+
+    const newComment = response.data?.data
+
+    if (newComment) {
+      stream.value = {
+        ...stream.value,
+        comments: [newComment, ...(Array.isArray(stream.value.comments) ? stream.value.comments : [])],
+        comments_count: Number(stream.value.comments_count || 0) + 1,
+      }
+    }
+
+    commentForm.content = ''
+  } catch (error) {
+    console.error('Failed to send comment', error)
+    commentError.value = error.response?.data?.message || 'Failed to send comment.'
+  } finally {
+    commentLoading.value = false
+  }
+}
+
+const openEndConfirmModal = () => {
+  showEndConfirmModal.value = true
+}
+
+const closeEndConfirmModal = () => {
+  if (endLoading.value) return
+  showEndConfirmModal.value = false
+}
+
+const endStream = async () => {
+  if (!stream.value) return
+
+  endLoading.value = true
+
+  try {
+    await api.patch(`/stream/streams/${route.params.id}/end`)
+    closeEndConfirmModal()
+    disconnectStudio()
+    await loadStream()
+    router.push(`/streams/${route.params.id}`)
+  } catch (error) {
+    console.error('Failed to end stream', error)
+    errorMessage.value = error.response?.data?.message || 'Failed to end stream.'
+  } finally {
+    endLoading.value = false
+  }
+}
+
+onMounted(() => {
+  handleResize()
+  window.addEventListener('resize', handleResize)
+
+  if (window.innerWidth < 1280) {
+    showChat.value = false
+  }
+
+  connectStudio()
+})
+
+onBeforeUnmount(() => {
+  unsubscribeFromStreamChannel()
+  disconnectStudio()
+  window.removeEventListener('resize', handleResize)
+  document.body.style.overflow = ''
+})
+</script>
 
 <style scoped>
 .material-symbols-outlined {
